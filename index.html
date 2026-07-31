@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sevgi, şefkat & dürüstlük</title>
+    <title>Sevgi, Şefkat & Dürüstlük</title>
     
     <!-- Google Fonts: Instrument Serif -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -63,17 +63,16 @@
         .card-title { font-family: 'Instrument Serif', serif; font-size: 1.5em; color: #111; }
         .card-sub { font-size: 0.85em; color: #777; margin-top: 2px; }
 
-        /* DİKEY AKIŞLI MODAL OKUYUCU */
+        /* DİKEY AKIŞLI VEKTÖREL (SVG) MODAL OKUYUCU */
         #reader-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(8, 8, 8, 0.96); z-index: 9999;
+            background: rgba(8, 8, 8, 0.97); z-index: 9999;
             flex-direction: column; align-items: center;
             overflow-y: auto;
             padding: 60px 10px;
             scroll-behavior: smooth;
         }
 
-        /* DİKEY SERGİ KAPLAYICISI */
         .vertical-stream {
             display: flex;
             flex-direction: column;
@@ -83,24 +82,25 @@
             width: 100%;
         }
 
-        /* HER BİR SAYFA POSTERİ */
+        /* SVG POSTER KUTUSU */
         .page-poster {
             width: 100%;
             box-shadow: 0 15px 40px rgba(0,0,0,0.8);
             border-radius: 4px;
             overflow: hidden;
-            background: #000; /* BEYAZLIĞI YOK EDEN SİYAH ZEMİN */
-            line-height: 0;   /* ALTTAKİ MİKRO BOŞLUĞU SIFIRLAR */
+            background: transparent;
+            display: flex;
+            justify-content: center;
         }
 
-        canvas {
+        /* SVG ELEMANI DÜZENLEMESİ */
+        .page-poster svg {
             width: 100% !important;
             height: auto !important;
             display: block;
-            background-color: #000; /* CANVAS KENDİ ZEMİNİ DE SİYAH */
         }
 
-        /* SABİT KAPATMA BUTONU */
+        /* KAPATMA BUTONU */
         .close-btn {
             position: fixed; top: 20px; right: 30px;
             color: #fff; font-size: 2.5em; cursor: pointer; z-index: 10001; opacity: 0.8; transition: 0.2s;
@@ -123,12 +123,9 @@
 
     <main class="magazines-grid" id="gridContainer"></main>
 
-    <!-- DİKEY OKUYUCU MODAL -->
     <div id="reader-modal">
         <span class="close-btn" onclick="closeReader()">&times;</span>
-        
-        <div id="loading-text" style="display:none;">SAYFALAR SERGİLENİYOR...</div>
-        
+        <div id="loading-text" style="display:none;">VEKTÖREL SAYFALAR ÇİZİLİYOR...</div>
         <div class="vertical-stream" id="streamContainer"></div>
     </div>
 
@@ -191,25 +188,28 @@
                 loading.style.display = 'none';
 
                 for (let num = 1; num <= pdfDoc.numPages; num++) {
+                    const page = await pdfDoc.getPage(num);
+                    const viewport = page.getViewport({ scale: 1.5 });
+
                     const pageContainer = document.createElement('div');
                     pageContainer.className = 'page-poster';
 
-                    const canvas = document.createElement('canvas');
-                    pageContainer.appendChild(canvas);
+                    // SVG Grafik Oluşturma Motoru
+                    const opList = await page.getOperatorList();
+                    const svgGfx = new pdfjsLib.SVGGraphics(page.commonObjs, page.objs);
+                    const svg = await svgGfx.getSVG(opList, viewport);
+
+                    // Taşma veya sınır hesaplama hatalarını engelleyen ayarlar
+                    svg.removeAttribute('width');
+                    svg.removeAttribute('height');
+                    svg.setAttribute('viewBox', `0 0 ${viewport.width} ${viewport.height}`);
+
+                    pageContainer.appendChild(svg);
                     stream.appendChild(pageContainer);
-
-                    const page = await pdfDoc.getPage(num);
-                    const ctx = canvas.getContext('2d');
-                    
-                    const viewport = page.getViewport({ scale: 2.5 });
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-
-                    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
                 }
 
             } catch (err) {
-                console.error("PDF Yükleme hatası:", err);
+                console.error("PDF SVG Yükleme hatası:", err);
                 loading.innerText = "PDF YÜKLENEMEDİ!";
             }
         }
