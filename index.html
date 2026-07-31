@@ -4,35 +4,113 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sevgi, Şefkat & Dürüstlük</title>
+    
+    <!-- Google Fonts: Instrument Serif -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    
     <!-- PDF.js Kütüphanesi -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: #0d0d0d; color: #fff; font-family: -apple-system, sans-serif; min-height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; user-select: none; }
-
-        /* 1. EKRAN: METALİK OYUN KARTI */
-        .card-container { perspective: 1000px; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
-        .card-hint { margin-top: 20px; font-size: 0.85em; letter-spacing: 2px; color: #888; text-transform: uppercase; animation: pulse 2s infinite; }
         
-        .card {
-            width: 320px;
-            height: 452px;
-            border-radius: 12px;
-            background-image: url('Kapak.png');
-            background-size: cover;
-            background-position: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
-            transition: transform 0.1s ease-out;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        /* ROSEMARY'S BABY KEMİK RENGİ / VINTAGE KREM ARKA PLAN */
+        body { 
+            background-color: #f4f0ea; 
+            color: #1a1a1a; 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            overflow-x: hidden;
+            padding: 40px 20px;
         }
 
+        /* HEADER / BAŞLIK BÖLÜMÜ */
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            margin-top: 20px;
+        }
+
+        h1.site-title {
+            font-family: 'Instrument Serif', serif;
+            font-size: clamp(3em, 8vw, 5.5em);
+            font-weight: 400;
+            letter-spacing: -1px;
+            color: #111;
+            line-height: 1;
+        }
+
+        /* NAVİGASYON MENÜSÜ (Hakkımızda vb. İleride Eklemek İçin) */
+        nav {
+            margin-top: 15px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        nav a {
+            color: #666;
+            text-decoration: none;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: color 0.2s;
+        }
+
+        nav a:hover {
+            color: #000;
+        }
+
+        /* KARTLARIN DİZİLECEĞİ IZGARA (GRID) AREA */
+        .magazines-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            justify-content: center;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        /* METALİK OYUN KARTI STİLİ */
+        .card-container { 
+            perspective: 1000px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            cursor: pointer; 
+        }
+
+        .card {
+            width: 300px;
+            height: 424px;
+            border-radius: 10px;
+            background-size: cover;
+            background-position: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            transition: transform 0.1s ease-out, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        /* Holografik Metalik Parlama Katmanı */
         .card::before {
             content: "";
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(115deg, transparent 20%, rgba(255, 0, 150, 0.4) 40%, rgba(255, 255, 255, 0.7) 50%, rgba(0, 225, 255, 0.4) 60%, transparent 80%);
+            background: linear-gradient(
+                115deg, 
+                transparent 20%, 
+                rgba(255, 0, 150, 0.3) 40%, 
+                rgba(255, 255, 255, 0.8) 50%, 
+                rgba(0, 225, 255, 0.3) 60%, 
+                transparent 80%
+            );
             mix-blend-mode: color-dodge;
             opacity: 0;
             transition: opacity 0.3s;
@@ -41,12 +119,29 @@
 
         .card:hover::before { opacity: 1; }
 
-        /* 2. EKRAN: ÇİFT SAYFALI SPREAD SLIDER MODAL */
+        .card-info {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .card-title {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.5em;
+            color: #111;
+        }
+
+        .card-sub {
+            font-size: 0.85em;
+            color: #777;
+            margin-top: 2px;
+        }
+
+        /* DERGİ OKUYUCU MODAL (SİYAH PERDE) */
         #reader-modal {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(5, 5, 5, 0.98);
+            background: rgba(10, 10, 10, 0.97);
             z-index: 9999;
             justify-content: center;
             align-items: center;
@@ -60,11 +155,11 @@
             gap: 4px;
             max-width: 95vw;
             max-height: 85vh;
-            transition: transform 0.4s ease-in-out, opacity 0.3s ease;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+            transition: opacity 0.3s ease;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
             background: #000;
             padding: 10px;
-            border-radius: 6px;
+            border-radius: 4px;
         }
 
         canvas {
@@ -74,15 +169,14 @@
             display: block;
         }
 
-        /* Navigasyon & Kapatma */
         .nav-btn {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.1);
             color: white;
             border: none;
-            font-size: 2.2em;
+            font-size: 2em;
             padding: 20px 15px;
             cursor: pointer;
             border-radius: 8px;
@@ -104,31 +198,35 @@
         .page-counter {
             position: absolute;
             bottom: 20px;
-            color: #666;
+            color: #888;
             font-size: 0.85em;
             letter-spacing: 2px;
         }
 
         #loading-text { font-size: 1.1em; color: #ff0055; letter-spacing: 2px; }
-
-        @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <!-- GİRİŞ: METALİK KART -->
-    <div class="card-container" id="cardContainer" onclick="openReader()">
-        <div class="card" id="metalCard"></div>
-        <div class="card-hint">✨ DERGİYİ OKUMAK İÇİN TIKLA ✨</div>
-    </div>
+    <!-- ÜST BAŞLIK & MENÜ -->
+    <header>
+        <h1 class="site-title">Sevgi, şefkat & dürüstlük</h1>
+        <nav>
+            <a href="#">Sayılar</a>
+            <!-- İleride hakkımızda eklemek istersen tek yapman gereken buraya link açmak -->
+            <!-- <a href="hakkimizda.html">Hakkımızda</a> -->
+        </nav>
+    </header>
 
-    <!-- DERGİ OKUYUCU MODALI -->
+    <!-- DERGİ KARTLARININ DİNAMİK OLARAK YÜKLENECEĞİ ALAN -->
+    <main class="magazines-grid" id="gridContainer"></main>
+
+    <!-- DERGİ OKUYUCU MODAL -->
     <div id="reader-modal">
         <span class="close-btn" onclick="closeReader()">&times;</span>
-        
         <button class="nav-btn prev-btn" onclick="changeSpread(-1)">&#10094;</button>
         
-        <div id="loading-text">YÜKLENİYOR...</div>
+        <div id="loading-text" style="display:none;">YÜKLENİYOR...</div>
         
         <div class="spread-container" id="spreadBox" style="display:none;">
             <canvas id="leftCanvas"></canvas>
@@ -136,7 +234,6 @@
         </div>
         
         <button class="nav-btn next-btn" onclick="changeSpread(1)">&#10095;</button>
-
         <div class="page-counter" id="pageCounter">- / -</div>
     </div>
 
@@ -144,41 +241,67 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
         let pdfDoc = null;
-        let currentSpread = 0; // 0: Kapak, 1: Sayfa 2-3, 2: Sayfa 4-5...
+        let currentSpread = 0;
         let totalSpreads = 0;
 
-        // 3D Metalik Kart Hareketi
-        const card = document.getElementById('metalCard');
-        const container = document.getElementById('cardContainer');
+        // 1. JSON'DAN DERGİLERİ DİNAMİK YÜKLE
+        async function loadMagazines() {
+            try {
+                const res = await fetch('dergiler.json');
+                const magazines = await res.json();
+                const grid = document.getElementById('gridContainer');
 
-        container.addEventListener('mousemove', (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const rotateX = (y - (rect.height / 2)) / 10;
-            const rotateY = ((rect.width / 2) - x) / 10;
-            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
-        });
+                magazines.forEach(mag => {
+                    const cardBox = document.createElement('div');
+                    cardBox.className = 'card-container';
+                    cardBox.onclick = () => openReader(mag.pdfDosya);
 
-        container.addEventListener('mouseleave', () => {
-            card.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
-        });
+                    cardBox.innerHTML = `
+                        <div class="card" style="background-image: url('${mag.kapakGorsel}')"></div>
+                        <div class="card-info">
+                            <div class="card-title">${mag.baslik}</div>
+                            <div class="card-sub">${mag.altBaslik || ''}</div>
+                        </div>
+                    `;
 
-        // Reader Açılış
-        async function openReader() {
+                    // Metalik kart 3D hareketi ekle
+                    const cardElem = cardBox.querySelector('.card');
+                    cardBox.addEventListener('mousemove', (e) => {
+                        const rect = cardElem.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        const rotateX = (y - (rect.height / 2)) / 10;
+                        const rotateY = ((rect.width / 2) - x) / 10;
+                        cardElem.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03, 1.03, 1.03)`;
+                    });
+
+                    cardBox.addEventListener('mouseleave', () => {
+                        cardElem.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+                    });
+
+                    grid.appendChild(cardBox);
+                });
+            } catch (err) {
+                console.error("Dergiler yüklenemedi:", err);
+            }
+        }
+
+        // 2. READER MOTORU
+        async function openReader(pdfPath) {
             document.getElementById('reader-modal').style.display = 'flex';
-            
-            if (!pdfDoc) {
-                try {
-                    pdfDoc = await pdfjsLib.getDocument('dergi.pdf').promise;
-                    totalSpreads = Math.ceil(pdfDoc.numPages / 2);
-                    document.getElementById('loading-text').style.display = 'none';
-                    document.getElementById('spreadBox').style.display = 'flex';
-                    renderSpread(currentSpread);
-                } catch (err) {
-                    console.error("PDF Yüklenemedi:", err);
-                    document.getElementById('loading-text').innerText = "dergi.pdf YÜKLENEMEDİ!";
-                }
+            document.getElementById('loading-text').style.display = 'block';
+            document.getElementById('spreadBox').style.display = 'none';
+
+            try {
+                pdfDoc = await pdfjsLib.getDocument(pdfPath).promise;
+                totalSpreads = Math.ceil(pdfDoc.numPages / 2);
+                currentSpread = 0;
+                document.getElementById('loading-text').style.display = 'none';
+                document.getElementById('spreadBox').style.display = 'flex';
+                renderSpread(currentSpread);
+            } catch (err) {
+                console.error("PDF Açılama hatası:", err);
+                document.getElementById('loading-text').innerText = "PDF YÜKLENEMEDİ!";
             }
         }
 
@@ -205,12 +328,10 @@
             spreadBox.style.opacity = '0.3';
 
             if (spreadIdx === 0) {
-                // Sadece Kapak
                 await renderCanvas(1, 'leftCanvas');
                 document.getElementById('rightCanvas').style.display = 'none';
                 document.getElementById('pageCounter').innerText = `KAPAK`;
             } else {
-                // Çift Sayfa Mantığı (Sayfa 2 & 3, Sayfa 4 & 5...)
                 const leftPageNum = spreadIdx * 2;
                 const rightPageNum = leftPageNum + 1;
 
@@ -231,7 +352,6 @@
             if (!pdfDoc) return;
             const newSpread = currentSpread + delta;
             if (newSpread < 0 || newSpread > totalSpreads) return;
-            
             currentSpread = newSpread;
             renderSpread(currentSpread);
         }
@@ -240,7 +360,6 @@
             document.getElementById('reader-modal').style.display = 'none';
         }
 
-        // Klavye Kontrolleri
         document.addEventListener('keydown', (e) => {
             if (document.getElementById('reader-modal').style.display === 'flex') {
                 if (e.key === 'ArrowRight') changeSpread(1);
@@ -248,6 +367,9 @@
                 if (e.key === 'Escape') closeReader();
             }
         });
+
+        // Sayfa açıldığında JSON'ı çalıştır
+        loadMagazines();
     </script>
 </body>
 </html>
