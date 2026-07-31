@@ -4,14 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sevgi, Şefkat & Dürüstlük</title>
-    <!-- Page-Flip ve PDF.js Kütüphaneleri -->
-    <script src="https://cdn.jsdelivr.net/npm/page-flip@0.8.8/dist/js/page-flip.browser.js"></script>
+    <!-- PDF.js Kütüphanesi -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: #0d0d0d; color: #fff; font-family: -apple-system, sans-serif; min-height: 100vh; display: flex; justify-content: center; align-items: center; overflow-x: hidden; }
+        body { background-color: #0d0d0d; color: #fff; font-family: -apple-system, sans-serif; min-height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; user-select: none; }
 
-        /* GİRİŞ EKRANI: METALİK KART */
+        /* 1. EKRAN: METALİK OYUN KARTI */
         .card-container { perspective: 1000px; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
         .card-hint { margin-top: 20px; font-size: 0.85em; letter-spacing: 2px; color: #888; text-transform: uppercase; animation: pulse 2s infinite; }
         
@@ -19,7 +18,7 @@
             width: 320px;
             height: 452px;
             border-radius: 12px;
-            background-image: url('Kapak.png'); /* Kartın üstündeki görsel */
+            background-image: url('Kapak.png'); /* Kapak kartı görselin */
             background-size: cover;
             background-position: center;
             box-shadow: 0 20px 40px rgba(0,0,0,0.8);
@@ -42,31 +41,70 @@
 
         .card:hover::before { opacity: 1; }
 
-        /* DERGİ MODALI */
-        #magazine-modal {
+        /* 2. EKRAN: PDF DERGİ OKUYUCU MODAL */
+        #reader-modal {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(5, 5, 5, 0.96);
+            background: rgba(5, 5, 5, 0.98);
             z-index: 9999;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
         }
+
+        .reader-content {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            max-width: 90vw;
+            max-height: 90vh;
+            object-fit: contain;
+            box-shadow: 0 0 30px rgba(0,0,0,0.9);
+            border-radius: 4px;
+        }
+
+        /* Navigasyon Butonları ve Kapatma */
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            font-size: 2em;
+            padding: 15px 20px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: 0.2s;
+            z-index: 10000;
+        }
+        .nav-btn:hover { background: rgba(255, 0, 85, 0.8); }
+        .prev-btn { left: 20px; }
+        .next-btn { right: 20px; }
 
         .close-btn {
             position: absolute;
             top: 20px; right: 30px;
             color: #fff; font-size: 2.5em; cursor: pointer;
-            z-index: 10000; opacity: 0.8;
+            z-index: 10001; opacity: 0.7; transition: 0.2s;
         }
-        .close-btn:hover { color: #ff0055; }
+        .close-btn:hover { color: #ff0055; opacity: 1; }
 
-        .flip-book { box-shadow: 0 0 50px rgba(0,0,0,0.9); }
-        .page { background-color: #fff; }
-        .page canvas { width: 100%; height: 100%; }
+        .page-counter {
+            position: absolute;
+            bottom: 20px;
+            color: #666;
+            font-size: 0.9em;
+            letter-spacing: 2px;
+        }
 
-        #loading-text { font-size: 1.2em; color: #ff0055; letter-spacing: 1px; }
+        #loading-text { font-size: 1.1em; color: #ff0055; letter-spacing: 2px; }
 
         @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
     </style>
@@ -74,23 +112,36 @@
 <body>
 
     <!-- GİRİŞ: METALİK KART -->
-    <div class="card-container" id="cardContainer" onclick="openMagazine()">
+    <div class="card-container" id="cardContainer" onclick="openReader()">
         <div class="card" id="metalCard"></div>
-        <div class="card-hint">✨ DERGİYİ AÇMAK İÇİN TIKLA ✨</div>
+        <div class="card-hint">✨ DERGİYİ OKUMAK İÇİN TIKLA ✨</div>
     </div>
 
-    <!-- DERGİ MODALI -->
-    <div id="magazine-modal">
-        <span class="close-btn" onclick="closeMagazine()">&times;</span>
-        <div id="loading-text">Dergi Sayfaları Yükleniyor...</div>
-        <div id="book" class="flip-book" style="display:none;"></div>
+    <!-- DERGİ OKUYUCU MODALI -->
+    <div id="reader-modal">
+        <span class="close-btn" onclick="closeReader()">&times;</span>
+        
+        <button class="nav-btn prev-btn" onclick="changePage(-1)">&#10094;</button>
+        
+        <div class="reader-content">
+            <div id="loading-text">YÜKLENİYOR...</div>
+            <canvas id="pdfCanvas" style="display:none;"></canvas>
+        </div>
+        
+        <button class="nav-btn next-btn" onclick="changePage(1)">&#10095;</button>
+
+        <div class="page-counter" id="pageCounter">1 / -</div>
     </div>
 
     <script>
-        // PDF.js Worker Ayarı
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        // Metalik Kart Hareketi
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+
+        // --- 1. 3D METALİK KART HAREKETİ ---
         const card = document.getElementById('metalCard');
         const container = document.getElementById('cardContainer');
 
@@ -107,67 +158,78 @@
             card.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
         });
 
-        // PDF'TEN FLIPBOOK OLUŞTURMA MOTORU
-        let pageFlip = null;
-        let isLoaded = false;
-
-        async function openMagazine() {
-            document.getElementById('magazine-modal').style.display = 'flex';
-
-            if (isLoaded) return;
-
-            try {
-                // dergi.pdf dosyasını yükle
-                const pdf = await pdfjsLib.getDocument('dergi.pdf').promise;
-                const bookElem = document.getElementById('book');
-
-                // PDF'teki her sayfayı Canvas olarak oluştur
-                for (let num = 1; num <= pdf.numPages; num++) {
-                    const page = await pdf.getPage(num);
-                    const viewport = page.getViewport({ scale: 2 });
-
-                    const pageDiv = document.createElement('div');
-                    pageDiv.className = 'page';
-
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-
-                    await page.render({ canvasContext: context, viewport: viewport }).promise;
-                    
-                    pageDiv.appendChild(canvas);
-                    bookElem.appendChild(pageDiv);
+        // --- 2. PDF OKUYUCU MANTIĞI ---
+        async function openReader() {
+            document.getElementById('reader-modal').style.display = 'flex';
+            
+            if (!pdfDoc) {
+                try {
+                    pdfDoc = await pdfjsLib.getDocument('dergi.pdf').promise;
+                    document.getElementById('loading-text').style.display = 'none';
+                    document.getElementById('pdfCanvas').style.display = 'block';
+                    renderPage(pageNum);
+                } catch (err) {
+                    console.error("PDF Yüklenemedi:", err);
+                    document.getElementById('loading-text').innerText = "dergi.pdf YÜKLENEMEDİ!";
                 }
-
-                document.getElementById('loading-text').style.display = 'none';
-                bookElem.style.display = 'block';
-
-                // Flipbook başlat
-                pageFlip = new St.PageFlip(bookElem, {
-                    width: 450,
-                    height: 636,
-                    size: "fixed",
-                    minWidth: 300,
-                    maxWidth: 1000,
-                    minHeight: 400,
-                    maxHeight: 1400,
-                    maxShadowOpacity: 0.8,
-                    showCover: true
-                });
-
-                pageFlip.loadFromHTML(document.querySelectorAll('.page'));
-                isLoaded = true;
-
-            } catch (err) {
-                console.error("PDF Yükleme hatası:", err);
-                document.getElementById('loading-text').innerText = "PDF yüklenirken hata oluştu. Lütfen dergi.pdf dosyasını kontrol edin.";
             }
         }
 
-        function closeMagazine() {
-            document.getElementById('magazine-modal').style.display = 'none';
+        function renderPage(num) {
+            pageRendering = true;
+            pdfDoc.getPage(num).then((page) => {
+                const canvas = document.getElementById('pdfCanvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Yüksek netlik için scale 2 yapıyoruz
+                const viewport = page.getViewport({ scale: 2 });
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+
+                page.render(renderContext).promise.then(() => {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
+            });
+
+            document.getElementById('pageCounter').innerText = `${num} / ${pdfDoc.numPages}`;
         }
+
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+
+        function changePage(delta) {
+            if (!pdfDoc) return;
+            if (pageNum + delta < 1 || pageNum + delta > pdfDoc.numPages) return;
+            pageNum += delta;
+            queueRenderPage(pageNum);
+        }
+
+        function closeReader() {
+            document.getElementById('reader-modal').style.display = 'none';
+        }
+
+        // Klavyeden Ok Tuşları İle Geçiş
+        document.addEventListener('keydown', (e) => {
+            if (document.getElementById('reader-modal').style.display === 'flex') {
+                if (e.key === 'ArrowRight') changePage(1);
+                if (e.key === 'ArrowLeft') changePage(-1);
+                if (e.key === 'Escape') closeReader();
+            }
+        });
     </script>
 </body>
 </html>
