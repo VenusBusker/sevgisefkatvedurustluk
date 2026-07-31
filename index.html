@@ -83,19 +83,21 @@
             width: 100%;
         }
 
-        /* HER BİR SAYFA (POSTER DOKUSU) */
+        /* HER BİR SAYFA POSTERİ */
         .page-poster {
             width: 100%;
             box-shadow: 0 15px 40px rgba(0,0,0,0.8);
             border-radius: 4px;
             overflow: hidden;
-            background: #111;
+            background: #000; /* BEYAZLIĞI YOK EDEN SİYAH ZEMİN */
+            line-height: 0;   /* ALTTAKİ MİKRO BOŞLUĞU SIFIRLAR */
         }
 
         canvas {
             width: 100% !important;
             height: auto !important;
             display: block;
+            background-color: #000; /* CANVAS KENDİ ZEMİNİ DE SİYAH */
         }
 
         /* SABİT KAPATMA BUTONU */
@@ -188,7 +190,6 @@
                 pdfDoc = await pdfjsLib.getDocument(pdfPath).promise;
                 loading.style.display = 'none';
 
-                // Tüm sayfaları sırayla dikey akışa çiz
                 for (let num = 1; num <= pdfDoc.numPages; num++) {
                     const pageContainer = document.createElement('div');
                     pageContainer.className = 'page-poster';
@@ -200,7 +201,6 @@
                     const page = await pdfDoc.getPage(num);
                     const ctx = canvas.getContext('2d');
                     
-                    // Yüksek netlik için scale 2.5
                     const viewport = page.getViewport({ scale: 2.5 });
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
@@ -218,7 +218,6 @@
             document.getElementById('reader-modal').style.display = 'none';
         }
 
-        // ESC ile kapatma
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeReader();
         });
