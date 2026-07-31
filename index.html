@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sevgi, Şefkat & Dürüstlük</title>
-    <!-- Page-Flip JS Kütüphanesi -->
+    <!-- Page-Flip ve PDF.js Kütüphaneleri -->
     <script src="https://cdn.jsdelivr.net/npm/page-flip@0.8.8/dist/js/page-flip.browser.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background-color: #0d0d0d; color: #fff; font-family: -apple-system, sans-serif; min-height: 100vh; display: flex; justify-content: center; align-items: center; overflow-x: hidden; }
 
-        /* 1. EKRAN: METALİK OYUN KARTI */
+        /* GİRİŞ EKRANI: METALİK KART */
         .card-container { perspective: 1000px; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
         .card-hint { margin-top: 20px; font-size: 0.85em; letter-spacing: 2px; color: #888; text-transform: uppercase; animation: pulse 2s infinite; }
         
@@ -18,11 +19,11 @@
             width: 320px;
             height: 452px;
             border-radius: 12px;
-            background-image: url('Kapak.png');
+            background-image: url('Kapak.png'); /* Kartın üstündeki görsel */
             background-size: cover;
             background-position: center;
             box-shadow: 0 20px 40px rgba(0,0,0,0.8);
-            transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+            transition: transform 0.1s ease-out;
             position: relative;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -32,14 +33,7 @@
             content: "";
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(
-                115deg,
-                transparent 20%,
-                rgba(255, 0, 150, 0.4) 40%,
-                rgba(255, 255, 255, 0.7) 50%,
-                rgba(0, 225, 255, 0.4) 60%,
-                transparent 80%
-            );
+            background: linear-gradient(115deg, transparent 20%, rgba(255, 0, 150, 0.4) 40%, rgba(255, 255, 255, 0.7) 50%, rgba(0, 225, 255, 0.4) 60%, transparent 80%);
             mix-blend-mode: color-dodge;
             opacity: 0;
             transition: opacity 0.3s;
@@ -48,7 +42,7 @@
 
         .card:hover::before { opacity: 1; }
 
-        /* 2. EKRAN: DERGİ OKUMA MODALI */
+        /* DERGİ MODALI */
         #magazine-modal {
             display: none;
             position: fixed;
@@ -64,16 +58,15 @@
             position: absolute;
             top: 20px; right: 30px;
             color: #fff; font-size: 2.5em; cursor: pointer;
-            z-index: 10000; opacity: 0.8; transition: 0.2s;
-            user-select: none;
+            z-index: 10000; opacity: 0.8;
         }
-        .close-btn:hover { opacity: 1; color: #ff0055; }
+        .close-btn:hover { color: #ff0055; }
 
         .flip-book { box-shadow: 0 0 50px rgba(0,0,0,0.9); }
-        
-        /* Görsellerin Tam Görünmesi İçin Etiket Yapısı */
-        .page { background-color: #111; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        .page img { width: 100%; height: 100%; object-fit: contain; }
+        .page { background-color: #fff; }
+        .page canvas { width: 100%; height: 100%; }
+
+        #loading-text { font-size: 1.2em; color: #ff0055; letter-spacing: 1px; }
 
         @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
     </style>
@@ -83,24 +76,21 @@
     <!-- GİRİŞ: METALİK KART -->
     <div class="card-container" id="cardContainer" onclick="openMagazine()">
         <div class="card" id="metalCard"></div>
-        <div class="card-hint">Sayıyı okumak için tıkla.</div>
+        <div class="card-hint">✨ DERGİYİ AÇMAK İÇİN TIKLA ✨</div>
     </div>
 
     <!-- DERGİ MODALI -->
     <div id="magazine-modal">
         <span class="close-btn" onclick="closeMagazine()">&times;</span>
-        <div id="book" class="flip-book">
-            <div class="page"><img src="Kapak.png" alt="Kapak"></div>
-            <div class="page"><img src="Sayfa2.png" alt="Sayfa 2"></div>
-            <div class="page"><img src="Sayfa3.png" alt="Sayfa 3"></div>
-            <div class="page"><img src="Sayfa4.png" alt="Sayfa 4"></div>
-            <div class="page"><img src="Sayfa5.png" alt="Sayfa 5"></div>
-            <div class="page"><img src="Sayfa6.png" alt="Sayfa 6"></div>
-        </div>
+        <div id="loading-text">Dergi Sayfaları Yükleniyor...</div>
+        <div id="book" class="flip-book" style="display:none;"></div>
     </div>
 
     <script>
-        // 3D Metalik Kart Hareketi
+        // PDF.js Worker Ayarı
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+        // Metalik Kart Hareketi
         const card = document.getElementById('metalCard');
         const container = document.getElementById('cardContainer');
 
@@ -108,13 +98,8 @@
             const rect = card.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
-            
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-            
-            const rotateX = (y - centerY) / 10;
-            const rotateY = (centerX - x) / 10;
-
+            const rotateX = (y - (rect.height / 2)) / 10;
+            const rotateY = ((rect.width / 2) - x) / 10;
             card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
         });
 
@@ -122,21 +107,44 @@
             card.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
         });
 
-        // Sayfa Çevirme Motoru
+        // PDF'TEN FLIPBOOK OLUŞTURMA MOTORU
         let pageFlip = null;
+        let isLoaded = false;
 
-        function openMagazine() {
-            const modal = document.getElementById('magazine-modal');
-            modal.style.display = 'flex';
+        async function openMagazine() {
+            document.getElementById('magazine-modal').style.display = 'flex';
 
-            if (!pageFlip) {
-                // Kütüphanenin yüklenip yüklenmediğini kontrol et
-                if (typeof St === 'undefined' || !St.PageFlip) {
-                    console.error("PageFlip kütüphanesi henüz yüklenmedi.");
-                    return;
+            if (isLoaded) return;
+
+            try {
+                // dergi.pdf dosyasını yükle
+                const pdf = await pdfjsLib.getDocument('dergi.pdf').promise;
+                const bookElem = document.getElementById('book');
+
+                // PDF'teki her sayfayı Canvas olarak oluştur
+                for (let num = 1; num <= pdf.numPages; num++) {
+                    const page = await pdf.getPage(num);
+                    const viewport = page.getViewport({ scale: 2 });
+
+                    const pageDiv = document.createElement('div');
+                    pageDiv.className = 'page';
+
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    
+                    pageDiv.appendChild(canvas);
+                    bookElem.appendChild(pageDiv);
                 }
 
-                pageFlip = new St.PageFlip(document.getElementById('book'), {
+                document.getElementById('loading-text').style.display = 'none';
+                bookElem.style.display = 'block';
+
+                // Flipbook başlat
+                pageFlip = new St.PageFlip(bookElem, {
                     width: 450,
                     height: 636,
                     size: "fixed",
@@ -145,11 +153,15 @@
                     minHeight: 400,
                     maxHeight: 1400,
                     maxShadowOpacity: 0.8,
-                    showCover: true,
-                    mobileScrollSupport: true
+                    showCover: true
                 });
 
                 pageFlip.loadFromHTML(document.querySelectorAll('.page'));
+                isLoaded = true;
+
+            } catch (err) {
+                console.error("PDF Yükleme hatası:", err);
+                document.getElementById('loading-text').innerText = "PDF yüklenirken hata oluştu. Lütfen dergi.pdf dosyasını kontrol edin.";
             }
         }
 
