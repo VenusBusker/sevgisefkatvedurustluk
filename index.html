@@ -18,7 +18,7 @@
             width: 320px;
             height: 452px;
             border-radius: 12px;
-            background-image: url('Kapak.png'); /* Kapak kartı görselin */
+            background-image: url('Kapak.png');
             background-size: cover;
             background-position: center;
             box-shadow: 0 20px 40px rgba(0,0,0,0.8);
@@ -41,7 +41,7 @@
 
         .card:hover::before { opacity: 1; }
 
-        /* 2. EKRAN: PDF DERGİ OKUYUCU MODAL */
+        /* 2. EKRAN: ÇİFT SAYFALI SPREAD SLIDER MODAL */
         #reader-modal {
             display: none;
             position: fixed;
@@ -50,43 +50,48 @@
             z-index: 9999;
             justify-content: center;
             align-items: center;
+            flex-direction: column;
         }
 
-        .reader-content {
-            position: relative;
-            width: 100%;
-            height: 100%;
+        .spread-container {
             display: flex;
             justify-content: center;
             align-items: center;
+            gap: 4px;
+            max-width: 95vw;
+            max-height: 85vh;
+            transition: transform 0.4s ease-in-out, opacity 0.3s ease;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+            background: #000;
+            padding: 10px;
+            border-radius: 6px;
         }
 
         canvas {
-            max-width: 90vw;
-            max-height: 90vh;
+            max-height: 80vh;
+            width: auto;
             object-fit: contain;
-            box-shadow: 0 0 30px rgba(0,0,0,0.9);
-            border-radius: 4px;
+            display: block;
         }
 
-        /* Navigasyon Butonları ve Kapatma */
+        /* Navigasyon & Kapatma */
         .nav-btn {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
             color: white;
             border: none;
-            font-size: 2em;
-            padding: 15px 20px;
+            font-size: 2.2em;
+            padding: 20px 15px;
             cursor: pointer;
             border-radius: 8px;
             transition: 0.2s;
             z-index: 10000;
         }
         .nav-btn:hover { background: rgba(255, 0, 85, 0.8); }
-        .prev-btn { left: 20px; }
-        .next-btn { right: 20px; }
+        .prev-btn { left: 25px; }
+        .next-btn { right: 25px; }
 
         .close-btn {
             position: absolute;
@@ -100,7 +105,7 @@
             position: absolute;
             bottom: 20px;
             color: #666;
-            font-size: 0.9em;
+            font-size: 0.85em;
             letter-spacing: 2px;
         }
 
@@ -121,27 +126,28 @@
     <div id="reader-modal">
         <span class="close-btn" onclick="closeReader()">&times;</span>
         
-        <button class="nav-btn prev-btn" onclick="changePage(-1)">&#10094;</button>
+        <button class="nav-btn prev-btn" onclick="changeSpread(-1)">&#10094;</button>
         
-        <div class="reader-content">
-            <div id="loading-text">YÜKLENİYOR...</div>
-            <canvas id="pdfCanvas" style="display:none;"></canvas>
+        <div id="loading-text">YÜKLENİYOR...</div>
+        
+        <div class="spread-container" id="spreadBox" style="display:none;">
+            <canvas id="leftCanvas"></canvas>
+            <canvas id="rightCanvas"></canvas>
         </div>
         
-        <button class="nav-btn next-btn" onclick="changePage(1)">&#10095;</button>
+        <button class="nav-btn next-btn" onclick="changeSpread(1)">&#10095;</button>
 
-        <div class="page-counter" id="pageCounter">1 / -</div>
+        <div class="page-counter" id="pageCounter">- / -</div>
     </div>
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
         let pdfDoc = null;
-        let pageNum = 1;
-        let pageRendering = false;
-        let pageNumPending = null;
+        let currentSpread = 0; // 0: Kapak, 1: Sayfa 2-3, 2: Sayfa 4-5...
+        let totalSpreads = 0;
 
-        // --- 1. 3D METALİK KART HAREKETİ ---
+        // 3D Metalik Kart Hareketi
         const card = document.getElementById('metalCard');
         const container = document.getElementById('cardContainer');
 
@@ -158,16 +164,17 @@
             card.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
         });
 
-        // --- 2. PDF OKUYUCU MANTIĞI ---
+        // Reader Açılış
         async function openReader() {
             document.getElementById('reader-modal').style.display = 'flex';
             
             if (!pdfDoc) {
                 try {
                     pdfDoc = await pdfjsLib.getDocument('dergi.pdf').promise;
+                    totalSpreads = Math.ceil(pdfDoc.numPages / 2);
                     document.getElementById('loading-text').style.display = 'none';
-                    document.getElementById('pdfCanvas').style.display = 'block';
-                    renderPage(pageNum);
+                    document.getElementById('spreadBox').style.display = 'flex';
+                    renderSpread(currentSpread);
                 } catch (err) {
                     console.error("PDF Yüklenemedi:", err);
                     document.getElementById('loading-text').innerText = "dergi.pdf YÜKLENEMEDİ!";
@@ -175,58 +182,69 @@
             }
         }
 
-        function renderPage(num) {
-            pageRendering = true;
-            pdfDoc.getPage(num).then((page) => {
-                const canvas = document.getElementById('pdfCanvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Yüksek netlik için scale 2 yapıyoruz
-                const viewport = page.getViewport({ scale: 2 });
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-
-                const renderContext = {
-                    canvasContext: ctx,
-                    viewport: viewport
-                };
-
-                page.render(renderContext).promise.then(() => {
-                    pageRendering = false;
-                    if (pageNumPending !== null) {
-                        renderPage(pageNumPending);
-                        pageNumPending = null;
-                    }
-                });
-            });
-
-            document.getElementById('pageCounter').innerText = `${num} / ${pdfDoc.numPages}`;
-        }
-
-        function queueRenderPage(num) {
-            if (pageRendering) {
-                pageNumPending = num;
-            } else {
-                renderPage(num);
+        async function renderCanvas(pageNum, canvasId) {
+            const canvas = document.getElementById(canvasId);
+            if (pageNum > pdfDoc.numPages) {
+                canvas.style.display = 'none';
+                return;
             }
+            
+            canvas.style.display = 'block';
+            const page = await pdfDoc.getPage(pageNum);
+            const ctx = canvas.getContext('2d');
+            const viewport = page.getViewport({ scale: 2 });
+            
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
         }
 
-        function changePage(delta) {
+        async function renderSpread(spreadIdx) {
+            const spreadBox = document.getElementById('spreadBox');
+            spreadBox.style.opacity = '0.3';
+
+            if (spreadIdx === 0) {
+                // Sadece Kapak
+                await renderCanvas(1, 'leftCanvas');
+                document.getElementById('rightCanvas').style.display = 'none';
+                document.getElementById('pageCounter').innerText = `KAPAK`;
+            } else {
+                // Çift Sayfa Mantığı (Sayfa 2 & 3, Sayfa 4 & 5...)
+                const leftPageNum = spreadIdx * 2;
+                const rightPageNum = leftPageNum + 1;
+
+                await renderCanvas(leftPageNum, 'leftCanvas');
+                if (rightPageNum <= pdfDoc.numPages) {
+                    await renderCanvas(rightPageNum, 'rightCanvas');
+                    document.getElementById('pageCounter').innerText = `SAYFA ${leftPageNum} - ${rightPageNum} / ${pdfDoc.numPages}`;
+                } else {
+                    document.getElementById('rightCanvas').style.display = 'none';
+                    document.getElementById('pageCounter').innerText = `SAYFA ${leftPageNum} / ${pdfDoc.numPages}`;
+                }
+            }
+
+            spreadBox.style.opacity = '1';
+        }
+
+        function changeSpread(delta) {
             if (!pdfDoc) return;
-            if (pageNum + delta < 1 || pageNum + delta > pdfDoc.numPages) return;
-            pageNum += delta;
-            queueRenderPage(pageNum);
+            const newSpread = currentSpread + delta;
+            if (newSpread < 0 || newSpread > totalSpreads) return;
+            
+            currentSpread = newSpread;
+            renderSpread(currentSpread);
         }
 
         function closeReader() {
             document.getElementById('reader-modal').style.display = 'none';
         }
 
-        // Klavyeden Ok Tuşları İle Geçiş
+        // Klavye Kontrolleri
         document.addEventListener('keydown', (e) => {
             if (document.getElementById('reader-modal').style.display === 'flex') {
-                if (e.key === 'ArrowRight') changePage(1);
-                if (e.key === 'ArrowLeft') changePage(-1);
+                if (e.key === 'ArrowRight') changeSpread(1);
+                if (e.key === 'ArrowLeft') changeSpread(-1);
                 if (e.key === 'Escape') closeReader();
             }
         });
