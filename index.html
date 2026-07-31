@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sevgi, Şefkat & Dürüstlük</title>
+    <!-- Page-Flip JS Kütüphanesi (Çevrilebilir Dergi İçin) -->
+    <script src="https://cdn.jsdelivr.net/npm/page-flip@0.8.8/dist/js/page-flip.browser.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #0d0d0d; color: #fff; font-family: -apple-system, sans-serif; min-height: 100vh; display: flex; justify-content: center; align-items: center; overflow-x: hidden; }
+
+        /* 1. EKRAN: METALİK OYUN KARTI (LANDING) */
+        .card-container { perspective: 1000px; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+        .card-hint { margin-top: 20px; font-size: 0.85em; letter-spacing: 2px; color: #888; text-transform: uppercase; animation: pulse 2s infinite; }
+        
+        .card {
+            width: 320px;
+            height: 452px;
+            border-radius: 12px;
+            background-image: url('page1.png');
+            background-size: cover;
+            background-position: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+            transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Holografik / Metalik Parlama Katmanı */
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(
+                115deg,
+                transparent 20%,
+                rgba(255, 0, 150, 0.4) 40%,
+                rgba(255, 255, 255, 0.7) 50%,
+                rgba(0, 225, 255, 0.4) 60%,
+                transparent 80%
+            );
+            mix-blend-mode: color-dodge;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .card:hover::before { opacity: 1; }
+
+        /* 2. EKRAN: ÇEVRİLEBİLİR DERGİ (FLIPBOOK MODALI) */
+        #magazine-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(5, 5, 5, 0.95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px; right: 30px;
+            color: #fff; font-size: 2em; cursor: pointer;
+            z-index: 1001; opacity: 0.7; transition: 0.2s;
+        }
+        .close-btn:hover { opacity: 1; color: #ff0055; }
+
+        .flip-book { box-shadow: 0 0 50px rgba(0,0,0,0.9); }
+        .page { background-size: cover; background-position: center; }
+
+        @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <!-- GİRİŞ: METALİK OYUN KARTI -->
+    <div class="card-container" id="cardContainer" onclick="openMagazine()">
+        <div class="card" id="metalCard"></div>
+        <div class="card-hint">✨ DERGİYİ AÇMAK İÇİN TIKLA ✨</div>
+    </div>
+
+    <!-- DERGİ OKUMA MODALI -->
+    <div id="magazine-modal">
+        <span class="close-btn" onclick="closeMagazine()">&times;</span>
+        <div id="book" class="flip-book">
+            <div class="page" style="background-image: url('page1.png');"></div>
+            <div class="page" style="background-image: url('page2.png');"></div>
+            <div class="page" style="background-image: url('page3.png');"></div>
+            <div class="page" style="background-image: url('page4.png');"></div>
+            <div class="page" style="background-image: url('page5.png');"></div>
+            <div class="page" style="background-image: url('page6.png');"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. 3D METALİK KART HAREKETİ VE IŞIK YANSIMASI ---
+        const card = document.getElementById('metalCard');
+        const container = document.getElementById('cardContainer');
+
+        container.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const rotateX = (y - centerY) / 10;
+            const rotateY = (centerX - x) / 10;
+
+            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`;
+        });
+
+        container.addEventListener('mouseleave', () => {
+            card.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+        });
+
+        // --- 2. PAGE-FLIP (SAYFA ÇEVİRME) MOTORU ---
+        let pageFlip = null;
+
+        function openMagazine() {
+            document.getElementById('magazine-modal').style.display = 'flex';
+
+            if (!pageFlip) {
+                // Sayfa oranına göre Flipbook başlat (1240 x 1754 oranları)
+                pageFlip = new St.PageFlip(document.getElementById('book'), {
+                    width: 450,
+                    height: 636,
+                    size: "fixed",
+                    minWidth: 300,
+                    maxWidth: 1000,
+                    minHeight: 400,
+                    maxHeight: 1400,
+                    maxShadowOpacity: 0.8,
+                    showCover: true,
+                    mobileScrollSupport: false
+                });
+
+                pageFlip.loadFromHTML(document.querySelectorAll('.page'));
+            }
+        }
+
+        function closeMagazine() {
+            document.getElementById('magazine-modal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
