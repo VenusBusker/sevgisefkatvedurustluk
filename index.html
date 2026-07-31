@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sevgi, Şefkat & Dürüstlük</title>
-    <!-- Page-Flip JS Kütüphanesi (Çevrilebilir Dergi İçin) -->
+    <!-- Page-Flip JS Kütüphanesi -->
     <script src="https://cdn.jsdelivr.net/npm/page-flip@0.8.8/dist/js/page-flip.browser.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background-color: #0d0d0d; color: #fff; font-family: -apple-system, sans-serif; min-height: 100vh; display: flex; justify-content: center; align-items: center; overflow-x: hidden; }
 
-        /* 1. EKRAN: METALİK OYUN KARTI (LANDING) */
+        /* 1. EKRAN: METALİK OYUN KARTI */
         .card-container { perspective: 1000px; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
         .card-hint { margin-top: 20px; font-size: 0.85em; letter-spacing: 2px; color: #888; text-transform: uppercase; animation: pulse 2s infinite; }
         
@@ -18,7 +18,8 @@
             width: 320px;
             height: 452px;
             border-radius: 12px;
-            background-image: url('page1.png');
+            /* GERÇEK KAPAK DOSYA İSMİN */
+            background-image: url('Kapak.png');
             background-size: cover;
             background-position: center;
             box-shadow: 0 20px 40px rgba(0,0,0,0.8);
@@ -28,7 +29,7 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        /* Holografik / Metalik Parlama Katmanı */
+        /* Metalik Parlama Katmanı */
         .card::before {
             content: "";
             position: absolute;
@@ -49,7 +50,7 @@
 
         .card:hover::before { opacity: 1; }
 
-        /* 2. EKRAN: ÇEVRİLEBİLİR DERGİ (FLIPBOOK MODALI) */
+        /* 2. EKRAN: DERGİ OKUMA MODALI */
         #magazine-modal {
             display: none;
             position: fixed;
@@ -77,27 +78,28 @@
 </head>
 <body>
 
-    <!-- GİRİŞ: METALİK OYUN KARTI -->
+    <!-- GİRİŞ: METALİK KART -->
     <div class="card-container" id="cardContainer" onclick="openMagazine()">
         <div class="card" id="metalCard"></div>
         <div class="card-hint">✨ DERGİYİ AÇMAK İÇİN TIKLA ✨</div>
     </div>
 
-    <!-- DERGİ OKUMA MODALI -->
+    <!-- DERGİ MODALI -->
     <div id="magazine-modal">
         <span class="close-btn" onclick="closeMagazine()">&times;</span>
         <div id="book" class="flip-book">
-            <div class="page" style="background-image: url('page1.png');"></div>
-            <div class="page" style="background-image: url('page2.png');"></div>
-            <div class="page" style="background-image: url('page3.png');"></div>
-            <div class="page" style="background-image: url('page4.png');"></div>
-            <div class="page" style="background-image: url('page5.png');"></div>
-            <div class="page" style="background-image: url('page6.png');"></div>
+            <!-- SENİN DOSYA İSİMLERİNLE BİREBİR EŞLEŞEN SAYFALAR -->
+            <div class="page" style="background-image: url('Kapak.png');"></div>
+            <div class="page" style="background-image: url('Sayfa 2.png');"></div>
+            <div class="page" style="background-image: url('Sayfa 3.png');"></div>
+            <div class="page" style="background-image: url('Sayfa 4.png');"></div>
+            <div class="page" style="background-image: url('Sayfa 5.png');"></div>
+            <div class="page" style="background-image: url('Sayfa 6.png');"></div>
         </div>
     </div>
 
     <script>
-        // --- 1. 3D METALİK KART HAREKETİ VE IŞIK YANSIMASI ---
+        // 3D Metalik Kart Hareketi
         const card = document.getElementById('metalCard');
         const container = document.getElementById('cardContainer');
 
@@ -119,14 +121,13 @@
             card.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
         });
 
-        // --- 2. PAGE-FLIP (SAYFA ÇEVİRME) MOTORU ---
+        // Sayfa Çevirme Motoru
         let pageFlip = null;
 
         function openMagazine() {
             document.getElementById('magazine-modal').style.display = 'flex';
 
             if (!pageFlip) {
-                // Sayfa oranına göre Flipbook başlat (1240 x 1754 oranları)
                 pageFlip = new St.PageFlip(document.getElementById('book'), {
                     width: 450,
                     height: 636,
