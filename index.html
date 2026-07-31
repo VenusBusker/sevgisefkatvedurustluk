@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sevgi, Şefkat & Dürüstlük</title>
+    <title>Sevgi, şefkat & dürüstlük</title>
     
     <!-- Google Fonts: Instrument Serif -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,6 +16,7 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
+        /* ROSEMARY'S BABY KEMİK RENGİ ARKA PLAN */
         body { 
             background-color: #f4f0ea; 
             color: #1a1a1a; 
@@ -62,62 +63,53 @@
         .card-title { font-family: 'Instrument Serif', serif; font-size: 1.5em; color: #111; }
         .card-sub { font-size: 0.85em; color: #777; margin-top: 2px; }
 
-        /* MODAL FULLSCREEN */
+        /* DİKEY AKIŞLI MODAL OKUYUCU */
         #reader-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(10, 10, 10, 0.97); z-index: 9999;
-            justify-content: center; align-items: center; flex-direction: column;
-            overflow: auto;
+            background: rgba(8, 8, 8, 0.96); z-index: 9999;
+            flex-direction: column; align-items: center;
+            overflow-y: auto;
+            padding: 60px 10px;
+            scroll-behavior: smooth;
         }
 
-        .spread-wrapper {
-            display: flex; justify-content: center; align-items: center;
-            max-width: 100vw; max-height: 100vh; padding: 20px;
+        /* DİKEY SERGİ KAPLAYICISI */
+        .vertical-stream {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            max-width: 850px;
+            width: 100%;
         }
 
-        .spread-container {
-            display: flex; justify-content: center; align-items: center; gap: 4px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.9); background: #000; padding: 8px; border-radius: 4px;
-            cursor: zoom-in; transition: transform 0.3s ease;
-        }
-
-        /* TIKLANDIĞINDA TEMİZ YAKINLAŞMA */
-        .spread-container.zoomed {
-            transform: scale(1.5);
-            cursor: zoom-out;
+        /* HER BİR SAYFA (POSTER DOKUSU) */
+        .page-poster {
+            width: 100%;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+            border-radius: 4px;
+            overflow: hidden;
+            background: #111;
         }
 
         canvas {
-            max-height: 80vh; max-width: 45vw; width: auto; height: auto;
-            object-fit: contain; display: block;
+            width: 100% !important;
+            height: auto !important;
+            display: block;
         }
 
-        @media (max-width: 768px) {
-            canvas { max-width: 90vw; max-height: 80vh; }
-            .spread-container { cursor: default; }
-            .spread-container.zoomed { transform: scale(1); }
-        }
-
-        .nav-btn {
-            position: fixed; top: 50%; transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.12); color: white; border: none;
-            font-size: 2em; padding: 18px 14px; cursor: pointer; border-radius: 8px; transition: 0.2s; z-index: 10000;
-        }
-        .nav-btn:hover { background: rgba(255, 0, 85, 0.8); }
-        .prev-btn { left: 20px; }
-        .next-btn { right: 20px; }
-
+        /* SABİT KAPATMA BUTONU */
         .close-btn {
             position: fixed; top: 20px; right: 30px;
-            color: #fff; font-size: 2.5em; cursor: pointer; z-index: 10001; opacity: 0.7; transition: 0.2s;
+            color: #fff; font-size: 2.5em; cursor: pointer; z-index: 10001; opacity: 0.8; transition: 0.2s;
+            background: rgba(0, 0, 0, 0.5);
+            width: 50px; height: 50px;
+            display: flex; justify-content: center; align-items: center;
+            border-radius: 50%;
         }
-        .close-btn:hover { color: #ff0055; opacity: 1; }
+        .close-btn:hover { color: #ff0055; opacity: 1; background: rgba(0,0,0,0.8); }
 
-        .page-counter {
-            position: fixed; bottom: 15px; color: #888; font-size: 0.85em; letter-spacing: 2px; z-index: 10001;
-        }
-
-        #loading-text { font-size: 1.1em; color: #ff0055; letter-spacing: 2px; }
+        #loading-text { font-size: 1.1em; color: #ff0055; letter-spacing: 2px; margin-top: 40vh; }
     </style>
 </head>
 <body>
@@ -129,32 +121,19 @@
 
     <main class="magazines-grid" id="gridContainer"></main>
 
-    <!-- MODAL -->
+    <!-- DİKEY OKUYUCU MODAL -->
     <div id="reader-modal">
         <span class="close-btn" onclick="closeReader()">&times;</span>
-        <button class="nav-btn prev-btn" onclick="changeSpread(-1)">&#10094;</button>
         
-        <div id="loading-text" style="display:none;">YÜKLENİYOR...</div>
+        <div id="loading-text" style="display:none;">SAYFALAR SERGİLENİYOR...</div>
         
-        <div class="spread-wrapper">
-            <div class="spread-container" id="spreadBox" onclick="toggleZoom()" style="display:none;">
-                <canvas id="leftCanvas"></canvas>
-                <canvas id="rightCanvas"></canvas>
-            </div>
-        </div>
-        
-        <button class="nav-btn next-btn" onclick="changeSpread(1)">&#10095;</button>
-        <div class="page-counter" id="pageCounter">- / -</div>
+        <div class="vertical-stream" id="streamContainer"></div>
     </div>
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
         let pdfDoc = null;
-        let currentSpread = 0;
-        let totalSpreads = 0;
-
-        const isMobile = () => window.innerWidth <= 768;
 
         async function loadMagazines() {
             try {
@@ -197,104 +176,51 @@
         }
 
         async function openReader(pdfPath) {
-            document.getElementById('reader-modal').style.display = 'flex';
-            document.getElementById('loading-text').style.display = 'block';
-            document.getElementById('spreadBox').style.display = 'none';
+            const modal = document.getElementById('reader-modal');
+            const stream = document.getElementById('streamContainer');
+            const loading = document.getElementById('loading-text');
+
+            stream.innerHTML = '';
+            modal.style.display = 'flex';
+            loading.style.display = 'block';
 
             try {
                 pdfDoc = await pdfjsLib.getDocument(pdfPath).promise;
-                totalSpreads = isMobile() ? pdfDoc.numPages : Math.ceil(pdfDoc.numPages / 2);
-                currentSpread = 0;
-                
-                document.getElementById('loading-text').style.display = 'none';
-                document.getElementById('spreadBox').style.display = 'flex';
-                await renderSpread(currentSpread);
-            } catch (err) {
-                console.error("PDF Açılama hatası:", err);
-                document.getElementById('loading-text').innerText = "PDF YÜKLENEMEDİ!";
-            }
-        }
+                loading.style.display = 'none';
 
-        async function renderCanvas(pageNum, canvasId) {
-            const canvas = document.getElementById(canvasId);
-            if (pageNum > pdfDoc.numPages) {
-                canvas.style.display = 'none';
-                return;
-            }
-            
-            canvas.style.display = 'block';
-            const page = await pdfDoc.getPage(pageNum);
-            const ctx = canvas.getContext('2d');
-            
-            // Çözünürlüğü tam kıvamında tutuyoruz (net ve dengeli)
-            const viewport = page.getViewport({ scale: 2.5 });
-            
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
+                // Tüm sayfaları sırayla dikey akışa çiz
+                for (let num = 1; num <= pdfDoc.numPages; num++) {
+                    const pageContainer = document.createElement('div');
+                    pageContainer.className = 'page-poster';
 
-            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-        }
+                    const canvas = document.createElement('canvas');
+                    pageContainer.appendChild(canvas);
+                    stream.appendChild(pageContainer);
 
-        async function renderSpread(spreadIdx) {
-            // Her sayfa değişiminde zoom'u sıfırla
-            document.getElementById('spreadBox').classList.remove('zoomed');
-            
-            const spreadBox = document.getElementById('spreadBox');
-            spreadBox.style.opacity = '0.3';
+                    const page = await pdfDoc.getPage(num);
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Yüksek netlik için scale 2.5
+                    const viewport = page.getViewport({ scale: 2.5 });
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
 
-            if (isMobile()) {
-                const pageNum = spreadIdx + 1;
-                await renderCanvas(pageNum, 'leftCanvas');
-                document.getElementById('rightCanvas').style.display = 'none';
-                document.getElementById('pageCounter').innerText = `SAYFA ${pageNum} / ${pdfDoc.numPages}`;
-            } else {
-                if (spreadIdx === 0) {
-                    await renderCanvas(1, 'leftCanvas');
-                    document.getElementById('rightCanvas').style.display = 'none';
-                    document.getElementById('pageCounter').innerText = `KAPAK`;
-                } else {
-                    const leftPageNum = spreadIdx * 2;
-                    const rightPageNum = leftPageNum + 1;
-
-                    await renderCanvas(leftPageNum, 'leftCanvas');
-                    if (rightPageNum <= pdfDoc.numPages) {
-                        await renderCanvas(rightPageNum, 'rightCanvas');
-                        document.getElementById('pageCounter').innerText = `SAYFA ${leftPageNum} - ${rightPageNum} / ${pdfDoc.numPages}`;
-                    } else {
-                        document.getElementById('rightCanvas').style.display = 'none';
-                        document.getElementById('pageCounter').innerText = `SAYFA ${leftPageNum} / ${pdfDoc.numPages}`;
-                    }
+                    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
                 }
+
+            } catch (err) {
+                console.error("PDF Yükleme hatası:", err);
+                loading.innerText = "PDF YÜKLENEMEDİ!";
             }
-
-            spreadBox.style.opacity = '1';
-        }
-
-        function toggleZoom() {
-            if (!isMobile()) {
-                document.getElementById('spreadBox').classList.toggle('zoomed');
-            }
-        }
-
-        function changeSpread(delta) {
-            if (!pdfDoc) return;
-            const newSpread = currentSpread + delta;
-            if (newSpread < 0 || newSpread >= totalSpreads) return;
-            currentSpread = newSpread;
-            renderSpread(currentSpread);
         }
 
         function closeReader() {
             document.getElementById('reader-modal').style.display = 'none';
-            document.getElementById('spreadBox').classList.remove('zoomed');
         }
 
+        // ESC ile kapatma
         document.addEventListener('keydown', (e) => {
-            if (document.getElementById('reader-modal').style.display === 'flex') {
-                if (e.key === 'ArrowRight') changeSpread(1);
-                if (e.key === 'ArrowLeft') changeSpread(-1);
-                if (e.key === 'Escape') closeReader();
-            }
+            if (e.key === 'Escape') closeReader();
         });
 
         loadMagazines();
