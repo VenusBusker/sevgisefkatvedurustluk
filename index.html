@@ -10,13 +10,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
     
-    <!-- PDF.js Kütüphanesi -->
+    <!-- PDF.js ve Panzoom (Yakınlaştırma) Kütüphaneleri -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
-        /* ROSEMARY'S BABY KEMİK RENGİ / VINTAGE KREM ARKA PLAN */
         body { 
             background-color: #f4f0ea; 
             color: #1a1a1a; 
@@ -45,7 +45,6 @@
             line-height: 1;
         }
 
-        /* NAVİGASYON MENÜSÜ (Hakkımızda vb. İleride Eklemek İçin) */
         nav {
             margin-top: 15px;
             display: flex;
@@ -62,11 +61,9 @@
             transition: color 0.2s;
         }
 
-        nav a:hover {
-            color: #000;
-        }
+        nav a:hover { color: #000; }
 
-        /* KARTLARIN DİZİLECEĞİ IZGARA (GRID) AREA */
+        /* GRID ALANI */
         .magazines-grid {
             display: flex;
             flex-wrap: wrap;
@@ -76,7 +73,7 @@
             width: 100%;
         }
 
-        /* METALİK OYUN KARTI STİLİ */
+        /* METALİK OYUN KARTI */
         .card-container { 
             perspective: 1000px; 
             display: flex; 
@@ -98,7 +95,6 @@
             border: 1px solid rgba(0, 0, 0, 0.1);
         }
 
-        /* Holografik Metalik Parlama Katmanı */
         .card::before {
             content: "";
             position: absolute;
@@ -119,33 +115,31 @@
 
         .card:hover::before { opacity: 1; }
 
-        .card-info {
-            margin-top: 15px;
-            text-align: center;
-        }
+        .card-info { margin-top: 15px; text-align: center; }
+        .card-title { font-family: 'Instrument Serif', serif; font-size: 1.5em; color: #111; }
+        .card-sub { font-size: 0.85em; color: #777; margin-top: 2px; }
 
-        .card-title {
-            font-family: 'Instrument Serif', serif;
-            font-size: 1.5em;
-            color: #111;
-        }
-
-        .card-sub {
-            font-size: 0.85em;
-            color: #777;
-            margin-top: 2px;
-        }
-
-        /* DERGİ OKUYUCU MODAL (SİYAH PERDE) */
+        /* DERGİ MODALI (FULLSCREEN OKUYUCU) */
         #reader-modal {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(10, 10, 10, 0.97);
+            background: rgba(10, 10, 10, 0.98);
             z-index: 9999;
             justify-content: center;
             align-items: center;
             flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* PANZOOM KAPLAYICI KUTU */
+        .zoom-wrapper {
+            width: 100vw;
+            height: 85vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
         }
 
         .spread-container {
@@ -153,39 +147,41 @@
             justify-content: center;
             align-items: center;
             gap: 4px;
-            max-width: 95vw;
-            max-height: 85vh;
-            transition: opacity 0.3s ease;
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
             background: #000;
-            padding: 10px;
+            padding: 8px;
             border-radius: 4px;
+            cursor: grab;
         }
 
+        .spread-container:active { cursor: grabbing; }
+
         canvas {
-            max-height: 80vh;
+            max-height: 78vh;
+            max-width: 90vw;
             width: auto;
             object-fit: contain;
             display: block;
         }
 
+        /* Navigasyon & Zoom Butonları */
         .nav-btn {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.12);
             color: white;
             border: none;
             font-size: 2em;
-            padding: 20px 15px;
+            padding: 18px 14px;
             cursor: pointer;
             border-radius: 8px;
             transition: 0.2s;
             z-index: 10000;
         }
         .nav-btn:hover { background: rgba(255, 0, 85, 0.8); }
-        .prev-btn { left: 25px; }
-        .next-btn { right: 25px; }
+        .prev-btn { left: 20px; }
+        .next-btn { right: 20px; }
 
         .close-btn {
             position: absolute;
@@ -195,12 +191,39 @@
         }
         .close-btn:hover { color: #ff0055; opacity: 1; }
 
+        /* Zoom Kontrol Paneli */
+        .zoom-controls {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            display: flex;
+            gap: 10px;
+            z-index: 10001;
+        }
+
+        .zoom-btn {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .zoom-btn:hover { background: rgba(255, 255, 255, 0.3); }
+
         .page-counter {
             position: absolute;
-            bottom: 20px;
+            bottom: 15px;
             color: #888;
             font-size: 0.85em;
             letter-spacing: 2px;
+            z-index: 10001;
         }
 
         #loading-text { font-size: 1.1em; color: #ff0055; letter-spacing: 2px; }
@@ -208,29 +231,35 @@
 </head>
 <body>
 
-    <!-- ÜST BAŞLIK & MENÜ -->
     <header>
         <h1 class="site-title">Sevgi, şefkat & dürüstlük</h1>
         <nav>
             <a href="#">Sayılar</a>
-            <!-- İleride hakkımızda eklemek istersen tek yapman gereken buraya link açmak -->
-            <!-- <a href="hakkimizda.html">Hakkımızda</a> -->
         </nav>
     </header>
 
-    <!-- DERGİ KARTLARININ DİNAMİK OLARAK YÜKLENECEĞİ ALAN -->
     <main class="magazines-grid" id="gridContainer"></main>
 
-    <!-- DERGİ OKUYUCU MODAL -->
+    <!-- MODAL OKUYUCU -->
     <div id="reader-modal">
         <span class="close-btn" onclick="closeReader()">&times;</span>
+        
+        <!-- Zoom Kontrolleri -->
+        <div class="zoom-controls">
+            <button class="zoom-btn" id="zoomInBtn">+</button>
+            <button class="zoom-btn" id="zoomOutBtn">-</button>
+            <button class="zoom-btn" id="zoomResetBtn">↺</button>
+        </div>
+
         <button class="nav-btn prev-btn" onclick="changeSpread(-1)">&#10094;</button>
         
         <div id="loading-text" style="display:none;">YÜKLENİYOR...</div>
         
-        <div class="spread-container" id="spreadBox" style="display:none;">
-            <canvas id="leftCanvas"></canvas>
-            <canvas id="rightCanvas"></canvas>
+        <div class="zoom-wrapper">
+            <div class="spread-container" id="spreadBox" style="display:none;">
+                <canvas id="leftCanvas"></canvas>
+                <canvas id="rightCanvas"></canvas>
+            </div>
         </div>
         
         <button class="nav-btn next-btn" onclick="changeSpread(1)">&#10095;</button>
@@ -243,8 +272,12 @@
         let pdfDoc = null;
         let currentSpread = 0;
         let totalSpreads = 0;
+        let panzoomInstance = null;
 
-        // 1. JSON'DAN DERGİLERİ DİNAMİK YÜKLE
+        // Mobil Kontrolü
+        const isMobile = () => window.innerWidth <= 768;
+
+        // JSON Yükleme
         async function loadMagazines() {
             try {
                 const res = await fetch('dergiler.json');
@@ -264,7 +297,6 @@
                         </div>
                     `;
 
-                    // Metalik kart 3D hareketi ekle
                     const cardElem = cardBox.querySelector('.card');
                     cardBox.addEventListener('mousemove', (e) => {
                         const rect = cardElem.getBoundingClientRect();
@@ -286,7 +318,26 @@
             }
         }
 
-        // 2. READER MOTORU
+        // Panzoom Başlatma
+        function initPanzoom() {
+            const elem = document.getElementById('spreadBox');
+            if (panzoomInstance) panzoomInstance.destroy();
+
+            panzoomInstance = Panzoom(elem, {
+                maxScale: 4,
+                minScale: 1,
+                contain: 'outside',
+                startScale: 1
+            });
+
+            // Wheel (Scroll) ile Zoom Yapabilme
+            elem.parentElement.addEventListener('wheel', panzoomInstance.zoomWithWheel);
+
+            document.getElementById('zoomInBtn').onclick = () => panzoomInstance.zoomIn();
+            document.getElementById('zoomOutBtn').onclick = () => panzoomInstance.zoomOut();
+            document.getElementById('zoomResetBtn').onclick = () => panzoomInstance.reset();
+        }
+
         async function openReader(pdfPath) {
             document.getElementById('reader-modal').style.display = 'flex';
             document.getElementById('loading-text').style.display = 'block';
@@ -294,11 +345,16 @@
 
             try {
                 pdfDoc = await pdfjsLib.getDocument(pdfPath).promise;
-                totalSpreads = Math.ceil(pdfDoc.numPages / 2);
+                
+                // Mobilde tek sayfa, masaüstünde çift sayfa mantığı
+                totalSpreads = isMobile() ? pdfDoc.numPages : Math.ceil(pdfDoc.numPages / 2);
                 currentSpread = 0;
+                
                 document.getElementById('loading-text').style.display = 'none';
                 document.getElementById('spreadBox').style.display = 'flex';
-                renderSpread(currentSpread);
+                
+                initPanzoom();
+                await renderSpread(currentSpread);
             } catch (err) {
                 console.error("PDF Açılama hatası:", err);
                 document.getElementById('loading-text').innerText = "PDF YÜKLENEMEDİ!";
@@ -315,7 +371,9 @@
             canvas.style.display = 'block';
             const page = await pdfDoc.getPage(pageNum);
             const ctx = canvas.getContext('2d');
-            const viewport = page.getViewport({ scale: 2 });
+            
+            // Jilet gibi netlik için scale değerini artırıyoruz (3x)
+            const viewport = page.getViewport({ scale: 3 });
             
             canvas.height = viewport.height;
             canvas.width = viewport.width;
@@ -324,24 +382,34 @@
         }
 
         async function renderSpread(spreadIdx) {
+            if (panzoomInstance) panzoomInstance.reset();
             const spreadBox = document.getElementById('spreadBox');
             spreadBox.style.opacity = '0.3';
 
-            if (spreadIdx === 0) {
-                await renderCanvas(1, 'leftCanvas');
+            if (isMobile()) {
+                // MOBİL: Sayfaları Teker Teker Göster
+                const pageNum = spreadIdx + 1;
+                await renderCanvas(pageNum, 'leftCanvas');
                 document.getElementById('rightCanvas').style.display = 'none';
-                document.getElementById('pageCounter').innerText = `KAPAK`;
+                document.getElementById('pageCounter').innerText = `SAYFA ${pageNum} / ${pdfDoc.numPages}`;
             } else {
-                const leftPageNum = spreadIdx * 2;
-                const rightPageNum = leftPageNum + 1;
-
-                await renderCanvas(leftPageNum, 'leftCanvas');
-                if (rightPageNum <= pdfDoc.numPages) {
-                    await renderCanvas(rightPageNum, 'rightCanvas');
-                    document.getElementById('pageCounter').innerText = `SAYFA ${leftPageNum} - ${rightPageNum} / ${pdfDoc.numPages}`;
-                } else {
+                // MASAÜSTÜ: Kapak Tek, Sonrakiler Çift Sayfa
+                if (spreadIdx === 0) {
+                    await renderCanvas(1, 'leftCanvas');
                     document.getElementById('rightCanvas').style.display = 'none';
-                    document.getElementById('pageCounter').innerText = `SAYFA ${leftPageNum} / ${pdfDoc.numPages}`;
+                    document.getElementById('pageCounter').innerText = `KAPAK`;
+                } else {
+                    const leftPageNum = spreadIdx * 2;
+                    const rightPageNum = leftPageNum + 1;
+
+                    await renderCanvas(leftPageNum, 'leftCanvas');
+                    if (rightPageNum <= pdfDoc.numPages) {
+                        await renderCanvas(rightPageNum, 'rightCanvas');
+                        document.getElementById('pageCounter').innerText = `SAYFA ${leftPageNum} - ${rightPageNum} / ${pdfDoc.numPages}`;
+                    } else {
+                        document.getElementById('rightCanvas').style.display = 'none';
+                        document.getElementById('pageCounter').innerText = `SAYFA ${leftPageNum} / ${pdfDoc.numPages}`;
+                    }
                 }
             }
 
@@ -351,13 +419,14 @@
         function changeSpread(delta) {
             if (!pdfDoc) return;
             const newSpread = currentSpread + delta;
-            if (newSpread < 0 || newSpread > totalSpreads) return;
+            if (newSpread < 0 || newSpread >= totalSpreads) return;
             currentSpread = newSpread;
             renderSpread(currentSpread);
         }
 
         function closeReader() {
             document.getElementById('reader-modal').style.display = 'none';
+            if (panzoomInstance) panzoomInstance.reset();
         }
 
         document.addEventListener('keydown', (e) => {
@@ -368,7 +437,6 @@
             }
         });
 
-        // Sayfa açıldığında JSON'ı çalıştır
         loadMagazines();
     </script>
 </body>
