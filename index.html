@@ -9,16 +9,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-    
-    <!-- Kütüphaneler -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/3/turn.min.js"></script>
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
-        /* MAT, NOSTALJİK TV GIRL MAVİ ARKA PLAN */
+        /* MAT RETRO TV GIRL MAVİ ARKA PLAN */
         body { 
             background-color: #4a6984; 
             color: #ffffff; 
@@ -68,76 +63,37 @@
         .card-title { font-family: 'Instrument Serif', serif; font-size: 1.5em; color: #ffffff; }
         .card-sub { font-size: 0.85em; color: rgba(255, 255, 255, 0.7); margin-top: 2px; }
 
-        /* MODAL OKUYUCU */
+        /* FULLSCREEN PDF MODALI */
         #reader-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(10, 10, 10, 0.96); z-index: 9999;
             justify-content: center; align-items: center; flex-direction: column;
-            overflow: hidden;
         }
 
-        /* MASAÜSTÜ: TURN.JS FLIPBOOK */
-        .flipbook-viewport {
-            display: flex; justify-content: center; align-items: center;
-            width: 100vw; height: 85vh;
-        }
-
-        #flipbook {
-            display: none;
+        .pdf-frame-container {
+            width: 90vw;
+            height: 90vh;
+            max-width: 1200px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-        }
-
-        #flipbook .page {
-            background-color: #0d0d0d;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-        }
-
-        /* MOBİL: DİKEY AKIŞ */
-        .vertical-stream {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            max-width: 800px;
-            width: 100%;
-            height: 100vh;
-            overflow-y: auto;
-            padding: 60px 10px;
-        }
-
-        .page-poster {
-            width: 100%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-            border-radius: 4px;
+            border-radius: 8px;
             overflow: hidden;
-            background: #000;
+            background: #111;
         }
 
-        .page-poster canvas {
-            width: 100% !important; height: auto !important; display: block;
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
         }
 
-        /* KAPATMA VE OKLAR */
+        /* KAPATMA BUTONU */
         .close-btn {
             position: fixed; top: 20px; right: 30px;
             color: #fff; font-size: 2.5em; cursor: pointer; z-index: 10001; opacity: 0.8; transition: 0.2s;
-            background: rgba(0, 0, 0, 0.5); width: 50px; height: 50px;
+            background: rgba(0, 0, 0, 0.6); width: 50px; height: 50px;
             display: flex; justify-content: center; align-items: center; border-radius: 50%;
         }
-        .close-btn:hover { color: #ff0055; opacity: 1; background: rgba(0,0,0,0.8); }
-
-        .nav-btn {
-            position: fixed; top: 50%; transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.12); color: white; border: none;
-            font-size: 2.2em; padding: 20px 15px; cursor: pointer; border-radius: 8px; transition: 0.2s; z-index: 10000;
-        }
-        .nav-btn:hover { background: rgba(255, 0, 85, 0.8); }
-        .prev-btn { left: 25px; }
-        .next-btn { right: 25px; }
-
-        #loading-text { font-size: 1.1em; color: #ff0055; letter-spacing: 2px; }
+        .close-btn:hover { color: #ff0055; opacity: 1; background: rgba(0,0,0,0.9); }
     </style>
 </head>
 <body>
@@ -149,28 +105,15 @@
 
     <main class="magazines-grid" id="gridContainer"></main>
 
-    <!-- FULLSCREEN MODAL -->
+    <!-- MODAL -->
     <div id="reader-modal">
         <span class="close-btn" onclick="closeReader()">&times;</span>
-        <div id="loading-text" style="display:none;">HAZIRLANIYOR...</div>
-
-        <!-- MASAÜSTÜ FLIPBOOK -->
-        <button class="nav-btn prev-btn" id="prevBtn" onclick="if($('#flipbook').turn('is')) $('#flipbook').turn('previous');">&#10094;</button>
-        <div class="flipbook-viewport" id="viewportBox">
-            <div id="flipbook"></div>
+        <div class="pdf-frame-container">
+            <iframe id="pdfViewer" src="" title="Dergi PDF Okuyucu"></iframe>
         </div>
-        <button class="nav-btn next-btn" id="nextBtn" onclick="if($('#flipbook').turn('is')) $('#flipbook').turn('next');">&#10095;</button>
-
-        <!-- MOBİL DİKEY AKIŞ -->
-        <div class="vertical-stream" id="streamContainer"></div>
     </div>
 
     <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
-        let pdfDoc = null;
-        const isMobile = () => window.innerWidth <= 768;
-
         async function loadMagazines() {
             try {
                 const res = await fetch('dergiler.json');
@@ -211,101 +154,24 @@
             }
         }
 
-        async function openReader(pdfPath) {
+        function openReader(pdfPath) {
             const modal = document.getElementById('reader-modal');
-            const loading = document.getElementById('loading-text');
-            const flipbook = $('#flipbook');
-            const streamContainer = document.getElementById('streamContainer');
-
+            const iframe = document.getElementById('pdfViewer');
+            
+            // PDF'i doğrudan tarayıcının yerel görüntüleyicisine bağlarız
+            iframe.src = pdfPath + "#toolbar=0&navpanes=0";
             modal.style.display = 'flex';
-            loading.style.display = 'block';
-            streamContainer.style.display = 'none';
-
-            try {
-                pdfDoc = await pdfjsLib.getDocument(pdfPath).promise;
-                loading.style.display = 'none';
-
-                if (isMobile()) {
-                    // MOBİL AKIŞ
-                    document.getElementById('prevBtn').style.display = 'none';
-                    document.getElementById('nextBtn').style.display = 'none';
-                    document.getElementById('viewportBox').style.display = 'none';
-                    
-                    streamContainer.innerHTML = '';
-                    streamContainer.style.display = 'flex';
-
-                    for (let num = 1; num <= pdfDoc.numPages; num++) {
-                        const pageContainer = document.createElement('div');
-                        pageContainer.className = 'page-poster';
-                        const canvas = document.createElement('canvas');
-                        pageContainer.appendChild(canvas);
-                        streamContainer.appendChild(pageContainer);
-
-                        const page = await pdfDoc.getPage(num);
-                        const ctx = canvas.getContext('2d');
-                        const viewport = page.getViewport({ scale: 2 });
-                        canvas.height = viewport.height;
-                        canvas.width = viewport.width;
-
-                        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-                    }
-                } else {
-                    // MASAÜSTÜ TURN.JS FLIPBOOK
-                    document.getElementById('prevBtn').style.display = 'block';
-                    document.getElementById('nextBtn').style.display = 'block';
-                    document.getElementById('viewportBox').style.display = 'flex';
-
-                    if (flipbook.turn('is')) {
-                        flipbook.turn('destroy');
-                    }
-                    flipbook.empty().show();
-
-                    for (let num = 1; num <= pdfDoc.numPages; num++) {
-                        const page = await pdfDoc.getPage(num);
-                        const viewport = page.getViewport({ scale: 1.5 });
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        canvas.height = viewport.height;
-                        canvas.width = viewport.width;
-
-                        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-
-                        const imgUrl = canvas.toDataURL('image/png');
-                        const pageDiv = $('<div>').addClass('page').css({
-                            'background-image': `url(${imgUrl})`
-                        });
-                        flipbook.append(pageDiv);
-                    }
-
-                    // Turn.js Başlat
-                    flipbook.turn({
-                        width: 900,
-                        height: 600,
-                        autoCenter: true,
-                        gradients: true,
-                        duration: 600
-                    });
-                }
-
-            } catch (err) {
-                console.error("PDF Açılama Hatası:", err);
-                loading.innerText = "SAYFALAR YÜKLENEMEDİ!";
-            }
         }
 
         function closeReader() {
-            document.getElementById('reader-modal').style.display = 'none';
-            if ($('#flipbook').turn('is')) {
-                $('#flipbook').turn('destroy');
-            }
+            const modal = document.getElementById('reader-modal');
+            const iframe = document.getElementById('pdfViewer');
+            modal.style.display = 'none';
+            iframe.src = "";
         }
 
         document.addEventListener('keydown', (e) => {
-            if (document.getElementById('reader-modal').style.display === 'flex') {
-                if (e.key === 'ArrowRight' && $('#flipbook').turn('is')) $('#flipbook').turn('next');
-                if (e.key === 'ArrowLeft' && $('#flipbook').turn('is')) $('#flipbook').turn('previous');
-                if (e.key === 'Escape') closeReader();
-            }
+            if (e.key === 'Escape') closeReader();
         });
 
         loadMagazines();
