@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sevgi, şefkat & dürüstlük</title>
+    <title>Sevgi, Şefkat & Dürüstlük</title>
     
     <!-- Google Fonts: Instrument Serif -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
     
-    <!-- PDF.js Kütüphanesi -->
+    <!-- PDF.js & St.PageFlip (3D Fizik Sayfa Çevirme Motoru) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
-        /* ROSEMARY'S BABY KEMİK RENGİ ARKA PLAN */
+        /* ÇELİK MAVİSİ (STEEL BLUE) ARKA PLAN */
         body { 
-            background-color: #f4f0ea; 
-            color: #1a1a1a; 
+            background-color: #2b3a4a; 
+            color: #f0f4f8; 
             font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
             min-height: 100vh; 
             display: flex; 
@@ -29,17 +30,19 @@
             padding: 40px 20px;
         }
 
-        /* HEADER */
+        /* HEADER / BAŞLIK BÖLÜMÜ */
         header { text-align: center; margin-bottom: 50px; margin-top: 20px; }
         h1.site-title {
             font-family: 'Instrument Serif', serif;
             font-size: clamp(3em, 8vw, 5.5em);
             font-weight: 400;
-            color: #111;
+            color: #eaf0f6;
             line-height: 1;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
         nav { margin-top: 15px; display: flex; gap: 20px; justify-content: center; }
-        nav a { color: #666; text-decoration: none; font-size: 0.9em; letter-spacing: 1px; text-transform: uppercase; }
+        nav a { color: #b0c4de; text-decoration: none; font-size: 0.9em; letter-spacing: 1px; text-transform: uppercase; transition: color 0.2s; }
+        nav a:hover { color: #fff; }
 
         /* GRID ALANI */
         .magazines-grid { display: flex; flex-wrap: wrap; gap: 40px; justify-content: center; max-width: 1200px; width: 100%; }
@@ -49,69 +52,90 @@
         .card {
             width: 300px; height: 424px; border-radius: 10px;
             background-size: cover; background-position: center;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
             transition: transform 0.1s ease-out; position: relative; overflow: hidden;
-            border: 1px solid rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
         .card::before {
             content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(115deg, transparent 20%, rgba(255, 0, 150, 0.3) 40%, rgba(255, 255, 255, 0.8) 50%, rgba(0, 225, 255, 0.3) 60%, transparent 80%);
+            background: linear-gradient(115deg, transparent 20%, rgba(0, 225, 255, 0.3) 40%, rgba(255, 255, 255, 0.7) 50%, rgba(255, 0, 150, 0.3) 60%, transparent 80%);
             mix-blend-mode: color-dodge; opacity: 0; transition: opacity 0.3s; pointer-events: none;
         }
         .card:hover::before { opacity: 1; }
         .card-info { margin-top: 15px; text-align: center; }
-        .card-title { font-family: 'Instrument Serif', serif; font-size: 1.5em; color: #111; }
-        .card-sub { font-size: 0.85em; color: #777; margin-top: 2px; }
+        .card-title { font-family: 'Instrument Serif', serif; font-size: 1.5em; color: #f0f4f8; }
+        .card-sub { font-size: 0.85em; color: #9bb0c7; margin-top: 2px; }
 
-        /* DİKEY AKIŞLI VEKTÖREL (SVG) MODAL OKUYUCU */
+        /* MODAL FULLSCREEN */
         #reader-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(8, 8, 8, 0.97); z-index: 9999;
-            flex-direction: column; align-items: center;
-            overflow-y: auto;
-            padding: 60px 10px;
-            scroll-behavior: smooth;
+            background: rgba(10, 15, 22, 0.97); z-index: 9999;
+            justify-content: center; align-items: center; flex-direction: column;
+            overflow: hidden;
         }
 
+        /* MASAÜSTÜ: 3D PAGEFLIP KONTROL ALANI */
+        .flipbook-viewport {
+            display: flex; justify-content: center; align-items: center;
+            width: 100vw; height: 85vh;
+        }
+
+        #flipbook {
+            display: none;
+        }
+
+        .page {
+            background-color: #0d0d0d;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* MOBİL: DİKEY AKIŞ ALANI */
         .vertical-stream {
-            display: flex;
+            display: none;
             flex-direction: column;
             align-items: center;
-            gap: 24px;
-            max-width: 850px;
+            gap: 20px;
+            max-width: 800px;
             width: 100%;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 60px 10px;
         }
 
-        /* SVG POSTER KUTUSU */
         .page-poster {
             width: 100%;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
             border-radius: 4px;
             overflow: hidden;
-            background: transparent;
-            display: flex;
-            justify-content: center;
+            background: #000;
         }
 
-        /* SVG ELEMANI DÜZENLEMESİ */
-        .page-poster svg {
-            width: 100% !important;
-            height: auto !important;
-            display: block;
+        .page-poster img {
+            width: 100%; height: auto; display: block;
         }
 
-        /* KAPATMA BUTONU */
+        /* KAPATMA BUTONU VE OKLAR */
         .close-btn {
             position: fixed; top: 20px; right: 30px;
             color: #fff; font-size: 2.5em; cursor: pointer; z-index: 10001; opacity: 0.8; transition: 0.2s;
-            background: rgba(0, 0, 0, 0.5);
-            width: 50px; height: 50px;
-            display: flex; justify-content: center; align-items: center;
-            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5); width: 50px; height: 50px;
+            display: flex; justify-content: center; align-items: center; border-radius: 50%;
         }
-        .close-btn:hover { color: #ff0055; opacity: 1; background: rgba(0,0,0,0.8); }
+        .close-btn:hover { color: #00e5ff; opacity: 1; background: rgba(0,0,0,0.8); }
 
-        #loading-text { font-size: 1.1em; color: #ff0055; letter-spacing: 2px; margin-top: 40vh; }
+        .nav-btn {
+            position: fixed; top: 50%; transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.08); color: white; border: none;
+            font-size: 2.2em; padding: 20px 15px; cursor: pointer; border-radius: 8px; transition: 0.2s; z-index: 10000;
+        }
+        .nav-btn:hover { background: rgba(0, 229, 255, 0.8); color: #000; }
+        .prev-btn { left: 25px; }
+        .next-btn { right: 25px; }
+
+        #loading-text { font-size: 1.1em; color: #00e5ff; letter-spacing: 2px; }
     </style>
 </head>
 <body>
@@ -123,9 +147,19 @@
 
     <main class="magazines-grid" id="gridContainer"></main>
 
+    <!-- FULLSCREEN MODAL OKUYUCU -->
     <div id="reader-modal">
         <span class="close-btn" onclick="closeReader()">&times;</span>
-        <div id="loading-text" style="display:none;">Selam, nasılsın?</div>
+        <div id="loading-text" style="display:none;">3D DERGİ HAZIRLANIYOR...</div>
+
+        <!-- MASAÜSTÜ İÇİN 3D PAGEFLIP -->
+        <button class="nav-btn prev-btn" id="prevBtn" onclick="pageFlipObj && pageFlipObj.flipPrev()">&#10094;</button>
+        <div class="flipbook-viewport" id="viewportBox">
+            <div id="flipbook"></div>
+        </div>
+        <button class="nav-btn next-btn" id="nextBtn" onclick="pageFlipObj && pageFlipObj.flipNext()">&#10095;</button>
+
+        <!-- MOBİL İÇİN DİKEY AKIŞ -->
         <div class="vertical-stream" id="streamContainer"></div>
     </div>
 
@@ -133,6 +167,9 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
         let pdfDoc = null;
+        let pageFlipObj = null;
+
+        const isMobile = () => window.innerWidth <= 768;
 
         async function loadMagazines() {
             try {
@@ -176,50 +213,110 @@
 
         async function openReader(pdfPath) {
             const modal = document.getElementById('reader-modal');
-            const stream = document.getElementById('streamContainer');
             const loading = document.getElementById('loading-text');
+            const flipContainer = document.getElementById('flipbook');
+            const streamContainer = document.getElementById('streamContainer');
 
-            stream.innerHTML = '';
             modal.style.display = 'flex';
             loading.style.display = 'block';
+            flipContainer.style.display = 'none';
+            streamContainer.style.display = 'none';
 
             try {
                 pdfDoc = await pdfjsLib.getDocument(pdfPath).promise;
-                loading.style.display = 'none';
+                const pageImages = [];
 
+                // PDF Sayfalarını Yüksek Kaliteli Resme Çevir
                 for (let num = 1; num <= pdfDoc.numPages; num++) {
                     const page = await pdfDoc.getPage(num);
-                    const viewport = page.getViewport({ scale: 1.5 });
+                    const viewport = page.getViewport({ scale: 2 });
+                    
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
 
-                    const pageContainer = document.createElement('div');
-                    pageContainer.className = 'page-poster';
+                    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                    pageImages.push(canvas.toDataURL('image/png'));
+                }
 
-                    // SVG Grafik Oluşturma Motoru
-                    const opList = await page.getOperatorList();
-                    const svgGfx = new pdfjsLib.SVGGraphics(page.commonObjs, page.objs);
-                    const svg = await svgGfx.getSVG(opList, viewport);
+                loading.style.display = 'none';
 
-                    // Taşma veya sınır hesaplama hatalarını engelleyen ayarlar
-                    svg.removeAttribute('width');
-                    svg.removeAttribute('height');
-                    svg.setAttribute('viewBox', `0 0 ${viewport.width} ${viewport.height}`);
+                if (isMobile()) {
+                    // --- MOBİL DİKEY AKIŞ ---
+                    document.getElementById('prevBtn').style.display = 'none';
+                    document.getElementById('nextBtn').style.display = 'none';
+                    document.getElementById('viewportBox').style.display = 'none';
+                    
+                    streamContainer.innerHTML = '';
+                    streamContainer.style.display = 'flex';
 
-                    pageContainer.appendChild(svg);
-                    stream.appendChild(pageContainer);
+                    pageImages.forEach(imgData => {
+                        const poster = document.createElement('div');
+                        poster.className = 'page-poster';
+                        poster.innerHTML = `<img src="${imgData}" alt="Sayfa">`;
+                        streamContainer.appendChild(poster);
+                    });
+                } else {
+                    // --- MASAÜSTÜ 3D PAGEFLIP ENGINE ---
+                    document.getElementById('prevBtn').style.display = 'block';
+                    document.getElementById('nextBtn').style.display = 'block';
+                    document.getElementById('viewportBox').style.display = 'flex';
+                    streamContainer.style.display = 'none';
+
+                    flipContainer.innerHTML = '';
+                    
+                    pageImages.forEach((imgData, idx) => {
+                        const pageDiv = document.createElement('div');
+                        pageDiv.className = 'page';
+                        pageDiv.style.backgroundImage = `url(${imgData})`;
+                        flipContainer.appendChild(pageDiv);
+                    });
+
+                    flipContainer.style.display = 'block';
+
+                    if (pageFlipObj) {
+                        pageFlipObj.destroy();
+                    }
+
+                    // PageFlip Kurulumu (Genişlik ve Yükseklik Oranları)
+                    const pageFlip = new St.PageFlip(flipContainer, {
+                        width: 550,
+                        height: 750,
+                        size: "stretch",
+                        minWidth: 315,
+                        maxWidth: 1000,
+                        minHeight: 420,
+                        maxHeight: 1350,
+                        maxShadowOpacity: 0.5,
+                        showCover: true,
+                        mobileScrollSupport: false
+                    });
+
+                    pageFlip.loadFromHTML(document.querySelectorAll('#flipbook .page'));
+                    pageFlipObj = pageFlip;
                 }
 
             } catch (err) {
-                console.error("PDF SVG Yükleme hatası:", err);
-                loading.innerText = "PDF YÜKLENEMEDİ";
+                console.error("PDF İşleme Hatası:", err);
+                loading.innerText = "PDF HAZIRLANAMADI!";
             }
         }
 
         function closeReader() {
             document.getElementById('reader-modal').style.display = 'none';
+            if (pageFlipObj) {
+                pageFlipObj.destroy();
+                pageFlipObj = null;
+            }
         }
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeReader();
+            if (document.getElementById('reader-modal').style.display === 'flex') {
+                if (e.key === 'ArrowRight' && pageFlipObj) pageFlipObj.flipNext();
+                if (e.key === 'ArrowLeft' && pageFlipObj) pageFlipObj.flipPrev();
+                if (e.key === 'Escape') closeReader();
+            }
         });
 
         loadMagazines();
