@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
     
-    <!-- PDF.js ve Turn.js (Hızlı & Yumuşak Sayfa Çevirme) -->
+    <!-- Kütüphaneler -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/3/turn.min.js"></script>
@@ -18,9 +18,9 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
-        /* TV GIRL TARZI RETRO MAVİ ARKA PLAN */
+        /* MAT, NOSTALJİK TV GIRL MAVİ ARKA PLAN */
         body { 
-            background-color: #3b82f6; 
+            background-color: #4a6984; 
             color: #ffffff; 
             font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
             min-height: 100vh; 
@@ -34,7 +34,6 @@
         /* HEADER */
         header { text-align: center; margin-bottom: 50px; margin-top: 20px; }
         
-        /* DÜZ, GÖLGESİZ INSTRUMENT SERIF BAŞLIK */
         h1.site-title {
             font-family: 'Instrument Serif', serif;
             font-size: clamp(3em, 8vw, 5.5em);
@@ -61,7 +60,7 @@
         }
         .card::before {
             content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(115deg, transparent 20%, rgba(255, 0, 150, 0.4) 40%, rgba(255, 255, 255, 0.7) 50%, rgba(0, 225, 255, 0.4) 60%, transparent 80%);
+            background: linear-gradient(115deg, transparent 20%, rgba(255, 0, 150, 0.3) 40%, rgba(255, 255, 255, 0.7) 50%, rgba(0, 225, 255, 0.3) 60%, transparent 80%);
             mix-blend-mode: color-dodge; opacity: 0; transition: opacity 0.3s; pointer-events: none;
         }
         .card:hover::before { opacity: 1; }
@@ -84,14 +83,11 @@
         }
 
         #flipbook {
-            width: 900px;
-            height: 600px;
+            display: none;
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
         }
 
         #flipbook .page {
-            width: 450px;
-            height: 600px;
             background-color: #0d0d0d;
             background-size: contain;
             background-repeat: no-repeat;
@@ -159,11 +155,11 @@
         <div id="loading-text" style="display:none;">HAZIRLANIYOR...</div>
 
         <!-- MASAÜSTÜ FLIPBOOK -->
-        <button class="nav-btn prev-btn" id="prevBtn" onclick="$('#flipbook').turn('previous')">&#10094;</button>
+        <button class="nav-btn prev-btn" id="prevBtn" onclick="if($('#flipbook').turn('is')) $('#flipbook').turn('previous');">&#10094;</button>
         <div class="flipbook-viewport" id="viewportBox">
             <div id="flipbook"></div>
         </div>
-        <button class="nav-btn next-btn" id="nextBtn" onclick="$('#flipbook').turn('next')">&#10095;</button>
+        <button class="nav-btn next-btn" id="nextBtn" onclick="if($('#flipbook').turn('is')) $('#flipbook').turn('next');">&#10095;</button>
 
         <!-- MOBİL DİKEY AKIŞ -->
         <div class="vertical-stream" id="streamContainer"></div>
@@ -262,11 +258,11 @@
                     if (flipbook.turn('is')) {
                         flipbook.turn('destroy');
                     }
-                    flipbook.empty();
+                    flipbook.empty().show();
 
                     for (let num = 1; num <= pdfDoc.numPages; num++) {
                         const page = await pdfDoc.getPage(num);
-                        const viewport = page.getViewport({ scale: 2 });
+                        const viewport = page.getViewport({ scale: 1.5 });
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
                         canvas.height = viewport.height;
@@ -274,8 +270,9 @@
 
                         await page.render({ canvasContext: ctx, viewport: viewport }).promise;
 
+                        const imgUrl = canvas.toDataURL('image/png');
                         const pageDiv = $('<div>').addClass('page').css({
-                            'background-image': `url(${canvas.toDataURL('image/png')})`
+                            'background-image': `url(${imgUrl})`
                         });
                         flipbook.append(pageDiv);
                     }
@@ -286,13 +283,13 @@
                         height: 600,
                         autoCenter: true,
                         gradients: true,
-                        duration: 800
+                        duration: 600
                     });
                 }
 
             } catch (err) {
                 console.error("PDF Açılama Hatası:", err);
-                loading.innerText = "YÜKLENEMEDİ!";
+                loading.innerText = "SAYFALAR YÜKLENEMEDİ!";
             }
         }
 
@@ -305,8 +302,8 @@
 
         document.addEventListener('keydown', (e) => {
             if (document.getElementById('reader-modal').style.display === 'flex') {
-                if (e.key === 'ArrowRight') $('#flipbook').turn('next');
-                if (e.key === 'ArrowLeft') $('#flipbook').turn('previous');
+                if (e.key === 'ArrowRight' && $('#flipbook').turn('is')) $('#flipbook').turn('next');
+                if (e.key === 'ArrowLeft' && $('#flipbook').turn('is')) $('#flipbook').turn('previous');
                 if (e.key === 'Escape') closeReader();
             }
         });
