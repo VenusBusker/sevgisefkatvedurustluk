@@ -3,18 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Öykü</title>
+    <title>Kapak</title>
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-
     <style>
         :root {
-            /* Rosemary's Baby pastel sarı/yeşililmsi arkaplan */
+            /* Rosemary's Baby pastel zemin */
             --bg-color: #e5e2cb;
-            --card-bg: #dad6be;
-            --border-color: #24221f;
         }
 
         * {
@@ -29,71 +23,83 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            perspective: 1000px;
+            perspective: 1200px;
             overflow: hidden;
-            font-family: 'Instrument Serif', Georgia, serif;
         }
 
-        .card-container {
+        /* KİTAP KAPAK KONTEYNERİ */
+        .book-container {
             width: 300px;
             height: 450px;
-            perspective: 1000px;
+            perspective: 1200px;
             cursor: pointer;
             text-decoration: none;
             display: block;
         }
 
-        .card {
+        .book {
             width: 100%;
             height: 100%;
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
             position: relative;
             transform-style: preserve-3d;
             transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            border-radius: 2px 6px 6px 2px;
+            box-shadow: -5px 10px 25px rgba(0, 0, 0, 0.2);
             overflow: hidden;
-            border-radius: 4px;
-            padding: 10px;
         }
 
-        /* Yükleyeceğiniz kapak resmi kartın içine tam oturur */
-        .card img {
+        /* KAPAK RESMİ */
+        .book img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            border-radius: 2px;
             display: block;
+        }
+
+        /* KİTAP SIRTI CİLT GÖLGESİ (Sol kenardaki kıvrım hissi) */
+        .book::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 15px;
+            height: 100%;
+            background: linear-gradient(to right, 
+                rgba(0,0,0,0.3) 0%, 
+                rgba(0,0,0,0.1) 50%, 
+                rgba(255,255,255,0.15) 80%, 
+                rgba(0,0,0,0) 100%);
+            z-index: 2;
             pointer-events: none;
         }
 
-        .card-border {
+        /* İŞIK YANSIMASI (Glare Efekti) */
+        .glare {
             position: absolute;
-            top: 15px;
-            left: 15px;
-            right: 15px;
-            bottom: 15px;
-            border: 1px solid rgba(36, 34, 31, 0.3);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 60%);
+            z-index: 3;
             pointer-events: none;
-            z-index: 2;
-            transform: translateZ(10px);
+            opacity: 0.7;
         }
     </style>
 </head>
 <body>
 
-    <!-- Karta tıklandığında oyku.html sayfasına gider -->
-    <a href="gunesyanigi.html" class="card-container" id="cardContainer">
-        <div class="card" id="tiltCard">
-            <div class="card-border"></div>
-            <!-- Kapak Resminiz Buraya Gelecek -->
-            <img src="kapak.jpg" alt="Öykü Kapağı">
+    <!-- Bağlantı adını kendi dosya adınızla güncelleyin -->
+    <a href="gunesyanigi.html" class="book-container" id="bookContainer">
+        <div class="book" id="tiltBook">
+            <div class="glare"></div>
+            <img src="kapak.jpg" alt="Kitap Kapağı">
         </div>
     </a>
 
     <script>
-        const container = document.getElementById('cardContainer');
-        const card = document.getElementById('tiltCard');
+        const container = document.getElementById('bookContainer');
+        const book = document.getElementById('tiltBook');
 
         container.addEventListener('mousemove', (e) => {
             const rect = container.getBoundingClientRect();
@@ -103,16 +109,16 @@
             const centerX = rect.width / 2;
             const centerY = rect.height / 2;
             
-            const rotateX = ((y - centerY) / centerY) * -15; 
-            const rotateY = ((x - centerX) / centerX) * 15;
+            const rotateX = ((y - centerY) / centerY) * -12; 
+            const rotateY = ((x - centerX) / centerX) * 12;
 
-            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03, 1.03, 1.03)`;
-            card.style.boxShadow = `${-rotateY * 1.5}px ${rotateX * 1.5}px 30px rgba(0,0,0,0.15)`;
+            book.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+            book.style.boxShadow = `${-rotateY * 2}px ${rotateX * 2 + 15}px 35px rgba(0,0,0,0.25)`;
         });
 
         container.addEventListener('mouseleave', () => {
-            card.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
-            card.style.boxShadow = '0 10px 25px rgba(0,0,0,0.08)';
+            book.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+            book.style.boxShadow = '-5px 10px 25px rgba(0, 0, 0, 0.2)';
         });
     </script>
 
