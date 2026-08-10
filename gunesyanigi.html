@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Öykü Okuyucu</title>
 
+    <!-- Mozilla PDF.js Kütüphanesi -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
     <style>
         :root {
+            /* Rosemary's Baby pastel zemin */
             --bg-color: #e5e2cb;
             --text-color: #24221f;
         }
@@ -19,24 +21,23 @@
             padding: 0;
         }
 
-        body, html {
-            width: 100%;
-            height: 100%;
+        body {
             background-color: var(--bg-color);
+            color: var(--text-color);
             font-family: Georgia, serif;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            padding: 80px 15px 40px 15px; /* Üst menü boşluğu */
         }
 
-        /* Geri Dön Butonu */
+        /* ÜST NAVİGASYON */
         .back-nav {
             position: fixed;
             top: 20px;
             left: 20px;
-            z-index: 99;
+            z-index: 999;
         }
 
         .back-nav a {
@@ -46,113 +47,51 @@
             letter-spacing: 1px;
             text-transform: uppercase;
             background: rgba(255, 255, 255, 0.6);
-            padding: 8px 16px;
+            padding: 8px 18px;
             border-radius: 20px;
             border: 1px solid rgba(36, 34, 31, 0.2);
-            backdrop-filter: blur(5px);
-        }
-
-        #status {
-            font-size: 0.95rem;
-            color: var(--text-color);
-            letter-spacing: 1px;
-        }
-
-        /* OKUYUCU KONTEYNERİ */
-        .reader-container {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100vh;
-            padding: 60px 20px 80px 20px;
-        }
-
-        /* KİTAP AÇILIMI (ÇİFT SAYFA YAPISI) */
-        .book-spread {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #ffffff;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-            border-radius: 4px;
-            overflow: hidden;
-            max-width: 95vw;
-            max-height: 82vh;
-            cursor: pointer;
-            position: relative;
-        }
-
-        /* Kitap Ortasındaki Cilt / Dikiş Gölgesi */
-        .book-spread::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 50%;
-            width: 20px;
-            transform: translateX(-50%);
-            background: linear-gradient(to right, 
-                rgba(0,0,0,0.12) 0%, 
-                rgba(0,0,0,0.02) 40%, 
-                rgba(0,0,0,0.02) 60%, 
-                rgba(0,0,0,0.12) 100%);
-            pointer-events: none;
-        }
-
-        .page-canvas {
-            max-height: 82vh;
-            width: auto;
-            object-fit: contain;
-            display: block;
-        }
-
-        /* Mobil Ekranlar İçin Ortadaki Gölgeyi Kaldır */
-        @media (max-width: 768px) {
-            .book-spread::after {
-                display: none;
-            }
-            .page-canvas.right-page {
-                display: none; /* Mobilde tek sayfaya düşür */
-            }
-        }
-
-        /* KONTROL PANELİ */
-        .controls {
-            position: fixed;
-            bottom: 25px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            z-index: 99;
-        }
-
-        .btn {
-            background: transparent;
-            color: var(--text-color);
-            border: 1px solid rgba(36, 34, 31, 0.3);
-            padding: 8px 20px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 0.85rem;
+            backdrop-filter: blur(8px);
             transition: all 0.2s ease;
         }
 
-        .btn:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.7);
+        .back-nav a:hover {
+            background: rgba(255, 255, 255, 0.9);
         }
 
-        .btn:disabled {
-            opacity: 0.25;
-            cursor: not-allowed;
-        }
-
-        .page-num {
-            font-size: 0.85rem;
-            color: var(--text-color);
+        #status {
+            margin-top: 40vh;
+            font-size: 0.95rem;
             letter-spacing: 1px;
+        }
+
+        /* A5 SAYFA AKIŞI CONTAINER */
+        #pages-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px; /* A5 kağıtlar arasındaki dikey boşluk */
+            width: 100%;
+            max-width: 650px; /* Ekrandaki maksimum A5 kağıt genişliği */
+        }
+
+        /* FİZİKSEL A5 KAĞIT HİSSİ */
+        .page-canvas {
+            background: #ffffff;
+            width: 100% !important;
+            height: auto !important;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            border-radius: 2px;
+            display: block;
+        }
+
+        /* MOBİL UYUM */
+        @media (max-width: 600px) {
+            body {
+                padding: 70px 10px 20px 10px;
+            }
+            #pages-container {
+                gap: 20px;
+            }
         }
     </style>
 </head>
@@ -164,114 +103,48 @@
 
     <div id="status">Öykü hazırlanıyor...</div>
 
-    <div class="reader-container" id="reader">
-        <div class="book-spread" id="bookSpread">
-            <canvas id="leftCanvas" class="page-canvas"></canvas>
-            <canvas id="rightCanvas" class="page-canvas right-page"></canvas>
-        </div>
-
-        <div class="controls">
-            <button class="btn" id="prevBtn" onclick="changePage(-step)">← Önceki</button>
-            <span class="page-num" id="pageIndicator">1 / 1</span>
-            <button class="btn" id="nextBtn" onclick="changePage(step)">Sonraki →</button>
-        </div>
-    </div>
+    <!-- Bütün A5 sayfaları bu container içinde dikey dizilecek -->
+    <div id="pages-container"></div>
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        const pdfUrl = 'gunesyanigi.pdf';
-        let pdfDoc = null;
-        let currentLeftPage = 1;
-        let isMobile = window.innerWidth <= 768;
-        let step = isMobile ? 1 : 2;
+        const pdfUrl = 'gunesyanigi.pdf'; // PDF dosya adınız
 
-        const leftCanvas = document.getElementById('leftCanvas');
-        const rightCanvas = document.getElementById('rightCanvas');
-        const leftCtx = leftCanvas.getContext('2d');
-        const rightCtx = rightCanvas.getContext('2d');
+        async function loadAndRenderPdf() {
+            const statusEl = document.getElementById('status');
+            const container = document.getElementById('pages-container');
 
-        async function renderPage(num, canvas, ctx) {
-            if (num > pdfDoc.numPages) {
-                // Eğer son sayfa tek kalırsa sağ tarafı boş bırak
-                canvas.style.display = 'none';
-                return;
-            }
-            canvas.style.display = 'block';
+            try {
+                const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+                statusEl.style.display = 'none';
 
-            const page = await pdfDoc.getPage(num);
-            // Yüksek çözünürlüklü ve net render için ölçek artırıldı
-            const viewport = page.getViewport({ scale: 2.5 }); 
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
+                // Bütün sayfaları sırayla A5 kağıtlar halinde oluştur
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    
+                    // Yüksek netlik için render ölçeği (Scale 2.5)
+                    const viewport = page.getViewport({ scale: 2.5 });
 
-            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-        }
+                    const canvas = document.createElement('canvas');
+                    canvas.className = 'page-canvas';
+                    const ctx = canvas.getContext('2d');
 
-        async function updateSpread() {
-            step = isMobile ? 1 : 2;
-            
-            // Sol ve Sağ Sayfaları Render Et
-            await renderPage(currentLeftPage, leftCanvas, leftCtx);
-            
-            if (!isMobile) {
-                await renderPage(currentLeftPage + 1, rightCanvas, rightCtx);
-            }
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
 
-            // Sayfa Numarası Göstergesi
-            if (isMobile) {
-                document.getElementById('pageIndicator').innerText = `${currentLeftPage} / ${pdfDoc.numPages}`;
-            } else {
-                const rightNum = Math.min(currentLeftPage + 1, pdfDoc.numPages);
-                document.getElementById('pageIndicator').innerText = `${currentLeftPage}-${rightNum} / ${pdfDoc.numPages}`;
-            }
+                    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
 
-            document.getElementById('prevBtn').disabled = (currentLeftPage <= 1);
-            document.getElementById('nextBtn').disabled = (currentLeftPage + step > pdfDoc.numPages);
-        }
+                    container.appendChild(canvas);
+                }
 
-        function changePage(delta) {
-            if (currentLeftPage + delta >= 1 && currentLeftPage + delta <= pdfDoc.numPages) {
-                currentLeftPage += delta;
-                updateSpread();
+            } catch (error) {
+                console.error(error);
+                statusEl.innerText = 'PDF yüklenirken bir sorun oluştu. Dosya adını kontrol edin.';
             }
         }
 
-        // Klavye Yön Tuşları Desteği
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight' || e.key === 'PageDown') changePage(step);
-            if (e.key === 'ArrowLeft' || e.key === 'PageUp') changePage(-step);
-        });
-
-        // Ekranın Sağına/Soluna Tıklayarak Geçiş
-        document.getElementById('bookSpread').addEventListener('click', (e) => {
-            const rect = document.getElementById('bookSpread').getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            if (clickX > rect.width / 2) {
-                changePage(step);
-            } else {
-                changePage(-step);
-            }
-        });
-
-        // Ekran Boyutu Değiştiğinde (Mobil/Masaüstü Geçişi)
-        window.addEventListener('resize', () => {
-            const mobileCheck = window.innerWidth <= 768;
-            if (mobileCheck !== isMobile) {
-                isMobile = mobileCheck;
-                updateSpread();
-            }
-        });
-
-        pdfjsLib.getDocument(pdfUrl).promise.then((pdf) => {
-            pdfDoc = pdf;
-            document.getElementById('status').style.display = 'none';
-            document.getElementById('reader').style.display = 'flex';
-            updateSpread();
-        }).catch((err) => {
-            console.error(err);
-            document.getElementById('status').innerText = 'PDF yüklenemedi. Dosya adını kontrol edin.';
-        });
+        loadAndRenderPdf();
     </script>
 
 </body>
