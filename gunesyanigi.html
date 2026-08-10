@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Öykü Okuyucu</title>
 
+    <!-- Mozilla PDF.js ve jQuery / Turn.js Kütüphaneleri -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/3/turn.min.js"></script>
+
     <style>
         :root {
             /* Rosemary's Baby pastel zemin */
@@ -23,7 +28,6 @@
             background-color: var(--bg-color);
             font-family: Georgia, serif;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             overflow: hidden;
@@ -32,9 +36,9 @@
         /* Geri Dön Butonu */
         .back-nav {
             position: fixed;
-            top: 15px;
-            left: 15px;
-            z-index: 99;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
         }
 
         .back-nav a {
@@ -43,29 +47,41 @@
             font-size: 0.85rem;
             letter-spacing: 1px;
             text-transform: uppercase;
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.5);
             padding: 8px 16px;
             border-radius: 20px;
             border: 1px solid rgba(36, 34, 31, 0.2);
             backdrop-filter: blur(5px);
         }
 
-        /* PDF Çerçevesi (A5 Oranında) */
-        .pdf-viewer {
-            width: 90%;
-            max-width: 550px; /* A5 En Oranı */
-            height: 85vh;     /* Ekran boyunun %85'i */
-            border: none;
+        /* Yükleniyor Yazısı */
+        #status {
+            position: absolute;
+            font-size: 0.9rem;
+            color: #24221f;
+            letter-spacing: 1px;
+        }
+
+        /* Flipbook Kitap Sahnesi */
+        #flipbook-viewport {
+            display: none;
+        }
+
+        #flipbook {
+            width: 840px;  /* İki A5 Sayfası Yan Yana (420px + 420px) */
+            height: 600px; /* A5 Yükseklik */
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            border-radius: 4px;
+        }
+
+        #flipbook .page {
+            width: 420px;
+            height: 600px;
             background-color: #fff;
         }
 
-        @media (max-width: 600px) {
-            .pdf-viewer {
-                width: 95%;
-                height: 80vh;
-            }
+        #flipbook canvas {
+            width: 100%;
+            height: 100%;
         }
     </style>
 </head>
@@ -75,11 +91,69 @@
         <a href="index.html">← Kapağa Dön</a>
     </div>
 
-    <!-- Tarayıcının Kendi Saf PDF Göstericisi -->
-    <iframe 
-        src="gunesyanigi.pdf#toolbar=0&navpanes=0&scrollbar=1" 
-        class="pdf-viewer">
-    </iframe>
+    <div id="status">Öykü hazırlanıyor...</div>
+
+    <div id="flipbook-viewport">
+        <div id="flipbook"></div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+        // GitHub'daki PDF dosyanızın adı
+        const pdfUrl = 'gunesyanigi.pdf'; 
+
+        async function loadPdfAndInitTurn() {
+            const statusEl = document.getElementById('status');
+            const viewport = document.getElementById('flipbook-viewport');
+            const $flipbook = $('#flipbook');
+
+            try {
+                // 1. PDF dosyasını yükle
+                const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+
+                // 2. Her PDF sayfasını Turn.js için birer Canvas yap
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    
+                    const $pageDiv = $('<div class="page"></div>');
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+
+                    // Yüksek netlik için render ölçeği
+                    const viewportScale = page.getViewport({ scale: 2 });
+                    canvas.height = viewportScale.height;
+                    canvas.width = viewportScale.width;
+
+                    await page.render({ canvasContext: context, viewport: viewportScale }).promise;
+
+                    $pageDiv.append(canvas);
+                    $flipbook.append($pageDiv);
+                }
+
+                // 3. Yükleme tamamlandı, Flipbook'u başlat
+                statusEl.style.display = 'none';
+                viewport.style.display = 'block';
+
+                $flipbook.turn({
+                    width: 840,
+                    height: 600,
+                    autoCenter: true,
+                    duration: 600, // Sayfa çevrilme hızı (milisaniye)
+                    gradients: true, // Gerçekçi gölge efekti
+                    acceleration: true
+                });
+
+            } catch (err) {
+                console.error(err);
+                statusEl.innerText = "PDF yüklenirken bir hata oluştu. Lütfen dosya adını kontrol edin.";
+            }
+        }
+
+        $(document).ready(function() {
+            loadPdfAndInitTurn();
+        });
+    </script>
 
 </body>
 </html>
