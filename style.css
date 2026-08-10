@@ -14,10 +14,15 @@
 
 html, body {
     width: 100%;
-    height: 100vh;
+    min-height: 100vh;
     background-color: var(--bg-color);
     color: var(--text-color);
     font-family: 'Georgia', serif;
+}
+
+/* ANA SAYFA STİLLERİ */
+body {
+    height: 100vh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -105,7 +110,7 @@ html, body {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
+    width: 10px;
     height: 100%;
     background: linear-gradient(to right, 
         rgba(0,0,0,0.2) 0%, 
@@ -144,6 +149,65 @@ html, body {
     opacity: 0.85;
 }
 
+/* OKUYUCU SAYFASI STİLLERİ */
+body.reader-page {
+    height: auto !important;
+    overflow-y: auto !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 80px 15px 40px 15px;
+}
+
+.back-nav {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 999;
+}
+
+.back-nav a {
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 8px 18px;
+    border-radius: 20px;
+    border: 1px solid rgba(36, 34, 31, 0.2);
+    backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+}
+
+.back-nav a:hover {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+#status {
+    margin-top: 40vh;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+}
+
+#pages-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    width: 100%;
+    max-width: 650px;
+}
+
+.page-canvas {
+    background: #ffffff;
+    width: 100% !important;
+    height: auto !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    border-radius: 2px;
+    display: block;
+}
+
 @media (max-width: 600px) {
     .site-title {
         font-size: 1.8rem;
@@ -154,5 +218,11 @@ html, body {
     }
     .nav-btn {
         display: none;
+    }
+    body.reader-page {
+        padding: 70px 10px 20px 10px;
+    }
+    #pages-container {
+        gap: 20px;
     }
 }
