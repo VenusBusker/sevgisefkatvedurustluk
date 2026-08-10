@@ -3,178 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sevgi, Şefkat & Dürüstlük</title>
+    <title>Öykü Başlığı - Kişisel Öyküler</title>
     
-    <!-- Google Fonts: Instrument Serif -->
+    <!-- Edebî ve okunması kolay Google Fontları -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        /* MAT RETRO TV GIRL MAVİ ARKA PLAN */
-        body { 
-            background-color: #4a6984; 
-            color: #ffffff; 
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            min-height: 100vh; 
-            display: flex; 
-            flex-direction: column;
-            align-items: center; 
-            overflow-x: hidden;
-            padding: 40px 20px;
+        /* GENEL SAYFA AYARLARI */
+        :root {
+            --bg-color: #fcfbf9;       /* Dinlendirici Krem Arka Plan */
+            --text-color: #2b2b2b;     /* Okunabilir Koyu Füme Metin */
+            --meta-color: #767676;     /* Tarih/Süre için Gri */
+            --accent-color: #8c2a2a;   /* Vurgular için Bordo Accent */
+            --max-width: 680px;        /* İdeal Satır Uzunluğu */
         }
 
-        /* HEADER */
-        header { text-align: center; margin-bottom: 50px; margin-top: 20px; }
-        
-        h1.site-title {
-            font-family: 'Instrument Serif', serif;
-            font-size: clamp(3em, 8vw, 5.5em);
-            font-weight: 400;
-            color: #ffffff;
-            line-height: 1;
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Lora', Georgia, serif;
+            font-size: 1.125rem; /* 18px */
+            line-height: 1.8;
+            margin: 0;
+            padding: 2rem 1.5rem;
+            display: flex;
+            justify-content: center;
         }
 
-        nav { margin-top: 15px; display: flex; gap: 20px; justify-content: center; }
-        nav a { color: rgba(255, 255, 255, 0.8); text-decoration: none; font-size: 0.9em; letter-spacing: 1px; text-transform: uppercase; transition: color 0.2s; }
-        nav a:hover { color: #fff; }
-
-        /* GRID ALANI */
-        .magazines-grid { display: flex; flex-wrap: wrap; gap: 40px; justify-content: center; max-width: 1200px; width: 100%; }
-
-        /* KART */
-        .card-container { perspective: 1000px; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
-        .card {
-            width: 300px; height: 424px; border-radius: 10px;
-            background-size: cover; background-position: center;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-            transition: transform 0.1s ease-out; position: relative; overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .card::before {
-            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(115deg, transparent 20%, rgba(255, 0, 150, 0.3) 40%, rgba(255, 255, 255, 0.7) 50%, rgba(0, 225, 255, 0.3) 60%, transparent 80%);
-            mix-blend-mode: color-dodge; opacity: 0; transition: opacity 0.3s; pointer-events: none;
-        }
-        .card:hover::before { opacity: 1; }
-        .card-info { margin-top: 15px; text-align: center; }
-        .card-title { font-family: 'Instrument Serif', serif; font-size: 1.5em; color: #ffffff; }
-        .card-sub { font-size: 0.85em; color: rgba(255, 255, 255, 0.7); margin-top: 2px; }
-
-        /* FULLSCREEN PDF MODALI */
-        #reader-modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(10, 10, 10, 0.96); z-index: 9999;
-            justify-content: center; align-items: center; flex-direction: column;
-        }
-
-        .pdf-frame-container {
-            width: 90vw;
-            height: 90vh;
-            max-width: 1200px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-            border-radius: 8px;
-            overflow: hidden;
-            background: #111;
-        }
-
-        iframe {
+        .container {
             width: 100%;
-            height: 100%;
-            border: none;
+            max-width: var(--max-width);
         }
 
-        /* KAPATMA BUTONU */
-        .close-btn {
-            position: fixed; top: 20px; right: 30px;
-            color: #fff; font-size: 2.5em; cursor: pointer; z-index: 10001; opacity: 0.8; transition: 0.2s;
-            background: rgba(0, 0, 0, 0.6); width: 50px; height: 50px;
-            display: flex; justify-content: center; align-items: center; border-radius: 50%;
+        /* ÜST BAŞLIK / LOGO */
+        header {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 3rem;
+            border-bottom: 1px solid #eae6df;
+            padding-bottom: 1rem;
         }
-        .close-btn:hover { color: #ff0055; opacity: 1; background: rgba(0,0,0,0.9); }
+
+        header a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        /* ÖYKÜ BAŞLIK ALANI */
+        .story-header {
+            margin-bottom: 2.5rem;
+        }
+
+        h1 {
+            font-size: 2.4rem;
+            font-weight: 600;
+            line-height: 1.2;
+            margin: 0 0 0.8rem 0;
+            color: #111;
+        }
+
+        .meta {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--meta-color);
+        }
+
+        /* ÖYKÜ METNİ */
+        .story-content p {
+            margin-bottom: 1.5rem;
+            text-align: justify;
+            hyphens: auto;
+        }
+
+        /* Öyküdeki Diyalog Vurguları / Mektup / İç Ses */
+        .story-content blockquote {
+            margin: 2rem 0;
+            padding-left: 1.2rem;
+            border-left: 3px solid var(--accent-color);
+            font-style: italic;
+            color: #4a4a4a;
+        }
+
+        /* ALT BİLGİ VE NAVİGASYON */
+        footer {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid #eae6df;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        footer a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1 class="site-title">Sevgi, şefkat & dürüstlük</h1>
-        <nav><a href="#">Sayılar</a></nav>
-    </header>
+    <div class="container">
+        <!-- Üst Menü / Site Adı -->
+        <header>
+            <a href="#">Kişisel Öyküler</a>
+        </header>
 
-    <main class="magazines-grid" id="gridContainer"></main>
+        <!-- Öykü Alanı -->
+        <main>
+            <article>
+                <div class="story-header">
+                    <h1>Gece Yarısı Hikâyesi</h1>
+                    <div class="meta">10 Ağustos 2026 • 3 dk okuma</div>
+                </div>
 
-    <!-- MODAL -->
-    <div id="reader-modal">
-        <span class="close-btn" onclick="closeReader()">&times;</span>
-        <div class="pdf-frame-container">
-            <iframe id="pdfViewer" src="" title="Dergi PDF Okuyucu"></iframe>
-        </div>
+                <div class="story-content">
+                    <p>Sokak lambasının sarı ışığı kaldırımlara vuruyor, rüzgâr kurumuş yaprakları hafifçe sürüklüyordu. Şehrin bu yakasında geceler her zaman biraz daha sessiz geçerdi.</p>
+
+                    <p>"O buraya hiç gelmedi ki," dedi Meryem. Ceketinin yakalarını kaldırıp karşıdaki karanlık pencereye baktı.</p>
+
+                    <p>Partneri cevap vermedi. Kafasını kurcalayan başka şeyler vardı; zihninde bu teorilere yer açmak istemiyordu.</p>
+
+                    <blockquote>
+                        "Bazen söylenmeyen şeyler, yazılan her kelimeden daha ağır basar."
+                    </blockquote>
+
+                    <p>Adımlarını hızlandırdılar. Yağmur hafif hafif atıştırmaya başlamıştı.</p>
+                </div>
+            </article>
+        </main>
+
+        <!-- Alt Gezinme Linkleri -->
+        <footer>
+            <span><a href="#">← Önceki Öykü</a></span>
+            <span><a href="#">Sonraki Öykü →</a></span>
+        </footer>
     </div>
 
-    <script>
-        async function loadMagazines() {
-            try {
-                const res = await fetch('dergiler.json');
-                const magazines = await res.json();
-                const grid = document.getElementById('gridContainer');
-
-                magazines.forEach(mag => {
-                    const cardBox = document.createElement('div');
-                    cardBox.className = 'card-container';
-                    cardBox.onclick = () => openReader(mag.pdfDosya);
-
-                    cardBox.innerHTML = `
-                        <div class="card" style="background-image: url('${mag.kapakGorsel}')"></div>
-                        <div class="card-info">
-                            <div class="card-title">${mag.baslik}</div>
-                            <div class="card-sub">${mag.altBaslik || ''}</div>
-                        </div>
-                    `;
-
-                    const cardElem = cardBox.querySelector('.card');
-                    cardBox.addEventListener('mousemove', (e) => {
-                        const rect = cardElem.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        const y = e.clientY - rect.top;
-                        const rotateX = (y - (rect.height / 2)) / 10;
-                        const rotateY = ((rect.width / 2) - x) / 10;
-                        cardElem.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03, 1.03, 1.03)`;
-                    });
-
-                    cardBox.addEventListener('mouseleave', () => {
-                        cardElem.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
-                    });
-
-                    grid.appendChild(cardBox);
-                });
-            } catch (err) {
-                console.error("Dergiler yüklenemedi:", err);
-            }
-        }
-
-        function openReader(pdfPath) {
-            const modal = document.getElementById('reader-modal');
-            const iframe = document.getElementById('pdfViewer');
-            
-            // PDF'i doğrudan tarayıcının yerel görüntüleyicisine bağlarız
-            iframe.src = pdfPath + "#toolbar=0&navpanes=0";
-            modal.style.display = 'flex';
-        }
-
-        function closeReader() {
-            const modal = document.getElementById('reader-modal');
-            const iframe = document.getElementById('pdfViewer');
-            modal.style.display = 'none';
-            iframe.src = "";
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeReader();
-        });
-
-        loadMagazines();
-    </script>
 </body>
 </html>
