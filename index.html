@@ -3,12 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kapak</title>
+    <title>Devam Eden Öyküler</title>
     
+    <!-- Instrument Serif ve Georgia Tipografisi -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
     <style>
         :root {
             /* Rosemary's Baby pastel zemin */
             --bg-color: #e5e2cb;
+            --text-color: #24221f;
         }
 
         * {
@@ -19,22 +25,64 @@
 
         body {
             background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Georgia', serif;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            padding: 40px 20px;
+        }
+
+        /* MİNİMAL BAŞLIK */
+        .site-header {
+            margin-bottom: 45px;
+            text-align: center;
+        }
+
+        .site-title {
+            font-family: 'Instrument Serif', Georgia, serif;
+            font-size: 2.2rem;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+        }
+
+        /* SAĞA / SOLA KAYDIRILABİLİR KART ALANI (SLIDER) */
+        .slider-container {
+            width: 100%;
+            max-width: 900px;
             display: flex;
             align-items: center;
             justify-content: center;
-            perspective: 1200px;
-            overflow: hidden;
+            position: relative;
         }
 
-        /* KİTAP KAPAK KONTEYNERİ */
-        .book-container {
-            width: 300px;
-            height: 450px;
-            perspective: 1200px;
-            cursor: pointer;
+        .cards-wrapper {
+            display: flex;
+            gap: 40px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            padding: 20px 10px 40px 10px;
+            /* Scrollbar'ı gizleme */
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE ve Edge */
+        }
+
+        .cards-wrapper::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+
+        /* KÜÇÜLTÜLMÜŞ KİTAP KAPAK KARTLARI */
+        .book-card {
+            flex: 0 0 auto;
+            width: 220px; /* Kapak biraz daha küçültüldü */
+            height: 330px;
+            perspective: 1000px;
             text-decoration: none;
-            display: block;
+            cursor: pointer;
         }
 
         .book {
@@ -42,13 +90,13 @@
             height: 100%;
             position: relative;
             transform-style: preserve-3d;
-            transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
-            border-radius: 2px 6px 6px 2px;
-            box-shadow: -5px 10px 25px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+            border-radius: 2px 5px 5px 2px;
+            box-shadow: -4px 8px 20px rgba(0, 0, 0, 0.15);
             overflow: hidden;
+            background-color: #fff;
         }
 
-        /* KAPAK RESMİ */
         .book img {
             width: 100%;
             height: 100%;
@@ -56,69 +104,136 @@
             display: block;
         }
 
-        /* KİTAP SIRTI CİLT GÖLGESİ (Sol kenardaki kıvrım hissi) */
+        /* CİLT / DİKİŞ GÖLGESİ (Sol kenar) */
         .book::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
-            width: 15px;
+            width: 12px;
             height: 100%;
             background: linear-gradient(to right, 
-                rgba(0,0,0,0.3) 0%, 
-                rgba(0,0,0,0.1) 50%, 
-                rgba(255,255,255,0.15) 80%, 
+                rgba(0,0,0,0.25) 0%, 
+                rgba(0,0,0,0.08) 50%, 
+                rgba(255,255,255,0.12) 80%, 
                 rgba(0,0,0,0) 100%);
             z-index: 2;
             pointer-events: none;
         }
 
-        /* İŞIK YANSIMASI (Glare Efekti) */
+        /* YANSIMA / GLARE EFEKTİ */
         .glare {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 60%);
+            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 60%);
             z-index: 3;
             pointer-events: none;
-            opacity: 0.7;
+            opacity: 0.6;
+        }
+
+        /* KAYDIRMA OKLARI (İleride birden fazla öykü olduğunda kolaylık sağlar) */
+        .nav-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-color);
+            cursor: pointer;
+            padding: 10px;
+            opacity: 0.4;
+            transition: opacity 0.2s;
+            user-select: none;
+        }
+
+        .nav-btn:hover {
+            opacity: 0.9;
+        }
+
+        /* MOBİL UYUM */
+        @media (max-width: 600px) {
+            .site-title {
+                font-size: 1.8rem;
+            }
+            .book-card {
+                width: 190px;
+                height: 285px;
+            }
+            .nav-btn {
+                display: none; /* Mobilde parmakla kaydırma yeterlidir */
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- Bağlantı adını kendi dosya adınızla güncelleyin -->
-    <a href="gunesyanigi.html" class="book-container" id="bookContainer">
-        <div class="book" id="tiltBook">
-            <div class="glare"></div>
-            <img src="kapak.jpg" alt="Kitap Kapağı">
+    <!-- MİNİMAL ÜST BAŞLIK -->
+    <header class="site-header">
+        <h1 class="site-title">Devam Eden Öyküler</h1>
+    </header>
+
+    <!-- SAĞA / SOLA KAYDIRMALI KART ALANI -->
+    <div class="slider-container">
+        <button class="nav-btn" onclick="scrollSlider(-260)">‹</button>
+
+        <div class="cards-wrapper" id="cardsWrapper">
+            
+            <!-- 1. ÖYKÜ KARTI -->
+            <a href="gunesyanigi.html" class="book-card">
+                <div class="book tilt-card">
+                    <div class="glare"></div>
+                    <img src="kapak.jpg" alt="Öykü Kapağı">
+                </div>
+            </a>
+
+            <!-- İLERİDE YENİ ÖYKÜ EKLERKEN AŞAĞIDAKİ BLOKLARI ÇOĞALTABİLİRSİNİZ -->
+            <!--
+            <a href="ikinci-oyku.html" class="book-card">
+                <div class="book tilt-card">
+                    <div class="glare"></div>
+                    <img src="ikinci-kapak.jpg" alt="İkinci Öykü Kapağı">
+                </div>
+            </a>
+            -->
+
         </div>
-    </a>
+
+        <button class="nav-btn" onclick="scrollSlider(260)">›</button>
+    </div>
 
     <script>
-        const container = document.getElementById('bookContainer');
-        const book = document.getElementById('tiltBook');
+        // Sağa/Sola Ok Butonları ile Kaydırma Mantığı
+        function scrollSlider(distance) {
+            document.getElementById('cardsWrapper').scrollBy({
+                left: distance,
+                behavior: 'smooth'
+            });
+        }
 
-        container.addEventListener('mousemove', (e) => {
-            const rect = container.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-            
-            const rotateX = ((y - centerY) / centerY) * -12; 
-            const rotateY = ((x - centerX) / centerX) * 12;
+        // 3D Tilt ve Hover Efekti
+        const cards = document.querySelectorAll('.tilt-card');
 
-            book.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-            book.style.boxShadow = `${-rotateY * 2}px ${rotateX * 2 + 15}px 35px rgba(0,0,0,0.25)`;
-        });
+        cards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = ((y - centerY) / centerY) * -10; 
+                const rotateY = ((x - centerX) / centerX) * 10;
 
-        container.addEventListener('mouseleave', () => {
-            book.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
-            book.style.boxShadow = '-5px 10px 25px rgba(0, 0, 0, 0.2)';
+                card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03, 1.03, 1.03)`;
+                card.style.boxShadow = `${-rotateY * 1.5}px ${rotateX * 1.5 + 10}px 25px rgba(0,0,0,0.2)`;
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+                card.style.boxShadow = '-4px 8px 20px rgba(0, 0, 0, 0.15)';
+            });
         });
     </script>
 
