@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Öykü Okuyucu</title>
 
-    <!-- Mozilla PDF.js ve jQuery / Turn.js Kütüphaneleri -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- Sadece Mozilla PDF İşleyicisi -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/3/turn.min.js"></script>
 
     <style>
         :root {
@@ -28,9 +26,11 @@
             background-color: var(--bg-color);
             font-family: Georgia, serif;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            user-select: none;
         }
 
         /* Geri Dön Butonu */
@@ -54,34 +54,80 @@
             backdrop-filter: blur(5px);
         }
 
-        /* Yükleniyor Yazısı */
         #status {
             position: absolute;
             font-size: 0.9rem;
             color: #24221f;
-            letter-spacing: 1px;
         }
 
-        /* Flipbook Kitap Sahnesi */
-        #flipbook-viewport {
+        /* 3D Kitap Sahnesi */
+        .book-wrapper {
             display: none;
+            perspective: 1500px;
+            cursor: pointer;
         }
 
-        #flipbook {
-            width: 840px;  /* İki A5 Sayfası Yan Yana (420px + 420px) */
-            height: 600px; /* A5 Yükseklik */
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        }
-
-        #flipbook .page {
+        .book {
             width: 420px;
             height: 600px;
-            background-color: #fff;
+            position: relative;
+            transform-style: preserve-3d;
         }
 
-        #flipbook canvas {
+        .page {
             width: 100%;
             height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-origin: left center;
+            transition: transform 0.6s cubic-bezier(0.645, 0.045, 0.355, 1);
+            transform-style: preserve-3d;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            background: white;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .page canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* Sayfa Çevrilme Sınırları ve Gölge */
+        .page.flipped {
+            transform: rotateY(-180deg);
+        }
+
+        /* Alt Navigasyon Kontrolü */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            z-index: 99;
+        }
+
+        .btn {
+            background: #24221f;
+            color: #e5e2cb;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.85rem;
+        }
+
+        .btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .page-num {
+            font-size: 0.85rem;
+            color: #24221f;
         }
     </style>
 </head>
@@ -93,66 +139,94 @@
 
     <div id="status">Öykü hazırlanıyor...</div>
 
-    <div id="flipbook-viewport">
-        <div id="flipbook"></div>
+    <div class="book-wrapper" id="wrapper">
+        <div class="book" id="book"></div>
+    </div>
+
+    <div class="controls" id="controls" style="display: none;">
+        <button class="btn" id="prevBtn" onclick="prevPage()">← Önceki Sayfa</button>
+        <span class="page-num" id="pageIndicator">1 / 1</span>
+        <button class="btn" id="nextBtn" onclick="nextPage()">Sonraki Sayfa →</button>
     </div>
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        // GitHub'daki PDF dosyanızın adı
-        const pdfUrl = 'gunesyanigi.pdf'; 
+        const pdfUrl = 'gunesyanigi.pdf'; // PDF dosya adınız
+        let totalPages = 0;
+        let currentPage = 1;
+        const pages = [];
 
-        async function loadPdfAndInitTurn() {
-            const statusEl = document.getElementById('status');
-            const viewport = document.getElementById('flipbook-viewport');
-            const $flipbook = $('#flipbook');
-
+        async function initBook() {
             try {
-                // 1. PDF dosyasını yükle
                 const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+                totalPages = pdf.numPages;
 
-                // 2. Her PDF sayfasını Turn.js için birer Canvas yap
-                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                    const page = await pdf.getPage(pageNum);
-                    
-                    const $pageDiv = $('<div class="page"></div>');
+                const bookEl = document.getElementById('book');
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const pageData = await pdf.getPage(i);
+                    const viewport = pageData.getViewport({ scale: 1.5 });
+
+                    const pageDiv = document.createElement('div');
+                    pageDiv.className = 'page';
+                    pageDiv.style.zIndex = totalPages - i;
+
                     const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
+                    const ctx = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
 
-                    // Yüksek netlik için render ölçeği
-                    const viewportScale = page.getViewport({ scale: 2 });
-                    canvas.height = viewportScale.height;
-                    canvas.width = viewportScale.width;
+                    await pageData.render({ canvasContext: ctx, viewport: viewport }).promise;
 
-                    await page.render({ canvasContext: context, viewport: viewportScale }).promise;
-
-                    $pageDiv.append(canvas);
-                    $flipbook.append($pageDiv);
+                    pageDiv.appendChild(canvas);
+                    bookEl.appendChild(pageDiv);
+                    pages.push(pageDiv);
                 }
 
-                // 3. Yükleme tamamlandı, Flipbook'u başlat
-                statusEl.style.display = 'none';
-                viewport.style.display = 'block';
+                document.getElementById('status').style.display = 'none';
+                document.getElementById('wrapper').style.display = 'block';
+                document.getElementById('controls').style.display = 'flex';
+                updateUI();
 
-                $flipbook.turn({
-                    width: 840,
-                    height: 600,
-                    autoCenter: true,
-                    duration: 600, // Sayfa çevrilme hızı (milisaniye)
-                    gradients: true, // Gerçekçi gölge efekti
-                    acceleration: true
+                // Kitaba tıklandığında da sayfa çevirme
+                document.getElementById('wrapper').addEventListener('click', (e) => {
+                    if (e.clientX > window.innerWidth / 2) {
+                        nextPage();
+                    } else {
+                        prevPage();
+                    }
                 });
 
             } catch (err) {
                 console.error(err);
-                statusEl.innerText = "PDF yüklenirken bir hata oluştu. Lütfen dosya adını kontrol edin.";
+                document.getElementById('status').innerText = "PDF yüklenemedi, dosya adını kontrol edin.";
             }
         }
 
-        $(document).ready(function() {
-            loadPdfAndInitTurn();
-        });
+        function nextPage() {
+            if (currentPage <= totalPages) {
+                pages[currentPage - 1].classList.add('flipped');
+                currentPage++;
+                updateUI();
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                pages[currentPage - 1].classList.remove('flipped');
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('pageIndicator').innerText = `${Math.min(currentPage, totalPages)} / ${totalPages}`;
+            document.getElementById('prevBtn').disabled = (currentPage === 1);
+            document.getElementById('nextBtn').disabled = (currentPage > totalPages);
+        }
+
+        initBook();
     </script>
 
 </body>
