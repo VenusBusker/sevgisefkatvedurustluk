@@ -5,34 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Öykü Okuyucu</title>
 
-    <!-- PDF.js ve StPageFlip Kütüphaneleri -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/page-flip@0.8.8/dist/js/page-flip.browser.js"></script>
-
     <style>
         :root {
+            /* Rosemary's Baby pastel zemin */
             --bg-color: #e5e2cb;
         }
 
-        body, html {
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
+        }
+
+        body, html {
             width: 100%;
             height: 100%;
             background-color: var(--bg-color);
-            overflow: hidden;
+            font-family: Georgia, serif;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-family: Georgia, serif;
+            overflow: hidden;
         }
 
         /* Geri Dön Butonu */
         .back-nav {
             position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 9999;
+            top: 15px;
+            left: 15px;
+            z-index: 99;
         }
 
         .back-nav a {
@@ -41,29 +43,29 @@
             font-size: 0.85rem;
             letter-spacing: 1px;
             text-transform: uppercase;
-            background: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.6);
             padding: 8px 16px;
             border-radius: 20px;
             border: 1px solid rgba(36, 34, 31, 0.2);
             backdrop-filter: blur(5px);
         }
 
-        /* Yükleniyor Uyarısı */
-        #loading {
-            position: absolute;
-            font-size: 0.9rem;
-            color: #24221f;
-            letter-spacing: 1px;
-        }
-
-        /* Kitap Sahnesi */
-        #book-container {
-            display: none;
+        /* PDF Çerçevesi (A5 Oranında) */
+        .pdf-viewer {
+            width: 90%;
+            max-width: 550px; /* A5 En Oranı */
+            height: 85vh;     /* Ekran boyunun %85'i */
+            border: none;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border-radius: 4px;
+            background-color: #fff;
         }
 
-        .page-canvas {
-            background: white;
+        @media (max-width: 600px) {
+            .pdf-viewer {
+                width: 95%;
+                height: 80vh;
+            }
         }
     </style>
 </head>
@@ -73,65 +75,11 @@
         <a href="index.html">← Kapağa Dön</a>
     </div>
 
-    <div id="loading">Öykü hazırlanıyor...</div>
-    <div id="book-container"></div>
-
-    <script>
-        // PDF.js worker ayarı
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
-        const pdfUrl = 'gunesyanigi.pdf'; // PDF dosyanızın adı
-
-        async function initFlipbook() {
-            const loadingEl = document.getElementById('loading');
-            const container = document.getElementById('book-container');
-
-            try {
-                // PDF'i yükle
-                const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
-                
-                // Sayfaları Canvas olarak hazırla
-                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                    const page = await pdf.getPage(pageNum);
-                    const viewport = page.getViewport({ scale: 1.5 }); // Netlik ayarı
-
-                    const canvas = document.createElement('canvas');
-                    canvas.className = 'page-canvas';
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-
-                    await page.render({ canvasContext: context, viewport: viewport }).promise;
-                    container.appendChild(canvas);
-                }
-
-                loadingEl.style.display = 'none';
-                container.style.display = 'block';
-
-                // PageFlip Kurulumu (Sayfa Çevirme Motoru)
-                const pageFlip = new St.PageFlip(container, {
-                    width: 420, // A5 Sayfa Eni
-                    height: 600, // A5 Sayfa Boyu
-                    size: "fixed",
-                    minWidth: 300,
-                    maxWidth: 500,
-                    minHeight: 400,
-                    maxHeight: 700,
-                    maxShadowOpacity: 0.5,
-                    showCover: true,
-                    mobileScrollSupport: false
-                });
-
-                pageFlip.loadFromHTML(document.querySelectorAll('.page-canvas'));
-
-            } catch (error) {
-                loadingEl.innerText = "PDF yüklenirken bir hata oluştu. Lütfen dosya adını kontrol edin.";
-                console.error(error);
-            }
-        }
-
-        initFlipbook();
-    </script>
+    <!-- Tarayıcının Kendi Saf PDF Göstericisi -->
+    <iframe 
+        src="gunesyanigi.pdf#toolbar=0&navpanes=0&scrollbar=1" 
+        class="pdf-viewer">
+    </iframe>
 
 </body>
 </html>
