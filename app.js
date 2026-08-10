@@ -16,7 +16,7 @@ async function loadStories() {
 
         stories.forEach(story => {
             const cardHTML = `
-                <a href="${story.link}" class="book-card">
+                <a href="reader.html?id=${story.id}" class="book-card">
                     <div class="book tilt-card">
                         <div class="glare"></div>
                         <img src="${story.kapak}" alt="${story.baslik}">
