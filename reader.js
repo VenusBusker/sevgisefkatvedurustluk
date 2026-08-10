@@ -4,7 +4,6 @@ async function initReader() {
     const statusEl = document.getElementById('status');
     const container = document.getElementById('pages-container');
 
-    // 1. URL'den 'id' parametresini al (örneğin: reader.html?id=gece-yarisi)
     const urlParams = new URLSearchParams(window.location.search);
     const storyId = urlParams.get('id');
 
@@ -14,7 +13,6 @@ async function initReader() {
     }
 
     try {
-        // 2. oykuler.json dosyasından ilgili öykünün PDF adını bul
         const response = await fetch('oykuler.json');
         const stories = await response.json();
         const story = stories.find(s => s.id === storyId);
@@ -26,7 +24,6 @@ async function initReader() {
 
         document.title = `${story.baslik} - Okuyucu`;
 
-        // 3. PDF'i yükle ve dikey A5 kağıtlar halinde çiz
         const pdf = await pdfjsLib.getDocument(story.pdf).promise;
         statusEl.style.display = 'none';
 
