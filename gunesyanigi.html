@@ -5,13 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Öykü Okuyucu</title>
 
-    <!-- Sadece Mozilla PDF İşleyicisi -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
     <style>
         :root {
-            /* Rosemary's Baby pastel zemin */
             --bg-color: #e5e2cb;
+            --text-color: #24221f;
         }
 
         * {
@@ -30,7 +29,6 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            user-select: none;
         }
 
         /* Geri Dön Butonu */
@@ -38,11 +36,11 @@
             position: fixed;
             top: 20px;
             left: 20px;
-            z-index: 9999;
+            z-index: 99;
         }
 
         .back-nav a {
-            color: #24221f;
+            color: var(--text-color);
             text-decoration: none;
             font-size: 0.85rem;
             letter-spacing: 1px;
@@ -55,69 +53,57 @@
         }
 
         #status {
-            position: absolute;
             font-size: 0.9rem;
-            color: #24221f;
+            color: var(--text-color);
         }
 
-        /* 3D Kitap Sahnesi */
-        .book-wrapper {
+        /* A5 KİTAP SAYFASI */
+        .reader-container {
             display: none;
-            perspective: 1500px;
-            cursor: pointer;
-        }
-
-        .book {
-            width: 420px;
-            height: 600px;
-            position: relative;
-            transform-style: preserve-3d;
-        }
-
-        .page {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            transform-origin: left center;
-            transition: transform 0.6s cubic-bezier(0.645, 0.045, 0.355, 1);
-            transform-style: preserve-3d;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            background: white;
-            border-radius: 0 4px 4px 0;
-        }
-
-        .page canvas {
-            width: 100%;
-            height: 100%;
-            border-radius: 0 4px 4px 0;
-        }
-
-        /* Sayfa Çevrilme Sınırları ve Gölge */
-        .page.flipped {
-            transform: rotateY(-180deg);
-        }
-
-        /* Alt Navigasyon Kontrolü */
-        .controls {
-            position: fixed;
-            bottom: 20px;
-            display: flex;
-            gap: 15px;
+            flex-direction: column;
             align-items: center;
-            z-index: 99;
+        }
+
+        .page-card {
+            background: #ffffff;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+            border-radius: 2px;
+            overflow: hidden;
+            max-width: 90vw;
+            max-height: 75vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .page-card canvas {
+            max-width: 100%;
+            max-height: 75vh;
+            object-fit: contain;
+        }
+
+        /* KONTROL PANELİ */
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
         }
 
         .btn {
-            background: #24221f;
-            color: #e5e2cb;
-            border: none;
+            background: transparent;
+            color: var(--text-color);
+            border: 1px solid rgba(36, 34, 31, 0.3);
             padding: 8px 18px;
-            border-radius: 4px;
+            border-radius: 20px;
             cursor: pointer;
             font-family: inherit;
             font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.6);
         }
 
         .btn:disabled {
@@ -127,7 +113,8 @@
 
         .page-num {
             font-size: 0.85rem;
-            color: #24221f;
+            color: var(--text-color);
+            letter-spacing: 1px;
         }
     </style>
 </head>
@@ -139,94 +126,100 @@
 
     <div id="status">Öykü hazırlanıyor...</div>
 
-    <div class="book-wrapper" id="wrapper">
-        <div class="book" id="book"></div>
-    </div>
+    <div class="reader-container" id="reader">
+        <div class="page-card" id="pageCard">
+            <canvas id="pdfCanvas"></canvas>
+        </div>
 
-    <div class="controls" id="controls" style="display: none;">
-        <button class="btn" id="prevBtn" onclick="prevPage()">← Önceki Sayfa</button>
-        <span class="page-num" id="pageIndicator">1 / 1</span>
-        <button class="btn" id="nextBtn" onclick="nextPage()">Sonraki Sayfa →</button>
+        <div class="controls">
+            <button class="btn" id="prevBtn" onclick="changePage(-1)">← Önceki</button>
+            <span class="page-num" id="pageIndicator">1 / 1</span>
+            <button class="btn" id="nextBtn" onclick="changePage(1)">Sonraki →</button>
+        </div>
     </div>
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        const pdfUrl = 'gunesyanigi.pdf'; // PDF dosya adınız
-        let totalPages = 0;
-        let currentPage = 1;
-        const pages = [];
+        const pdfUrl = 'gunesyanigi.pdf';
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
 
-        async function initBook() {
-            try {
-                const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
-                totalPages = pdf.numPages;
+        const canvas = document.getElementById('pdfCanvas');
+        const ctx = canvas.getContext('2d');
 
-                const bookEl = document.getElementById('book');
+        function renderPage(num) {
+            pageRendering = true;
 
-                for (let i = 1; i <= totalPages; i++) {
-                    const pageData = await pdf.getPage(i);
-                    const viewport = pageData.getViewport({ scale: 1.5 });
+            pdfDoc.getPage(num).then((page) => {
+                const viewport = page.getViewport({ scale: 2 }); // Net görünüm için ölçek
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
 
-                    const pageDiv = document.createElement('div');
-                    pageDiv.className = 'page';
-                    pageDiv.style.zIndex = totalPages - i;
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
 
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
+                const renderTask = page.render(renderContext);
 
-                    await pageData.render({ canvasContext: ctx, viewport: viewport }).promise;
-
-                    pageDiv.appendChild(canvas);
-                    bookEl.appendChild(pageDiv);
-                    pages.push(pageDiv);
-                }
-
-                document.getElementById('status').style.display = 'none';
-                document.getElementById('wrapper').style.display = 'block';
-                document.getElementById('controls').style.display = 'flex';
-                updateUI();
-
-                // Kitaba tıklandığında da sayfa çevirme
-                document.getElementById('wrapper').addEventListener('click', (e) => {
-                    if (e.clientX > window.innerWidth / 2) {
-                        nextPage();
-                    } else {
-                        prevPage();
+                renderTask.promise.then(() => {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
                     }
                 });
+            });
 
-            } catch (err) {
-                console.error(err);
-                document.getElementById('status').innerText = "PDF yüklenemedi, dosya adını kontrol edin.";
+            document.getElementById('pageIndicator').innerText = `${num} / ${pdfDoc.numPages}`;
+            document.getElementById('prevBtn').disabled = (num <= 1);
+            document.getElementById('nextBtn').disabled = (num >= pdfDoc.numPages);
+        }
+
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
             }
         }
 
-        function nextPage() {
-            if (currentPage <= totalPages) {
-                pages[currentPage - 1].classList.add('flipped');
-                currentPage++;
-                updateUI();
+        function changePage(delta) {
+            if (pageNum + delta >= 1 && pageNum + delta <= pdfDoc.numPages) {
+                pageNum += delta;
+                queueRenderPage(pageNum);
             }
         }
 
-        function prevPage() {
-            if (currentPage > 1) {
-                currentPage--;
-                pages[currentPage - 1].classList.remove('flipped');
-                updateUI();
+        // Klavyedeki Ok Tuşlarıyla Sayfa Değiştirme
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'PageDown') changePage(1);
+            if (e.key === 'ArrowLeft' || e.key === 'PageUp') changePage(-1);
+        });
+
+        // Ekrana Tıklayarak Sayfa Değiştirme
+        document.getElementById('pageCard').addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            if (clickX > rect.width / 2) {
+                changePage(1);
+            } else {
+                changePage(-1);
             }
-        }
+        });
 
-        function updateUI() {
-            document.getElementById('pageIndicator').innerText = `${Math.min(currentPage, totalPages)} / ${totalPages}`;
-            document.getElementById('prevBtn').disabled = (currentPage === 1);
-            document.getElementById('nextBtn').disabled = (currentPage > totalPages);
-        }
-
-        initBook();
+        pdfjsLib.getDocument(pdfUrl).promise.then((pdf) => {
+            pdfDoc = pdf;
+            document.getElementById('status').style.display = 'none';
+            document.getElementById('reader').style.display = 'flex';
+            renderPage(pageNum);
+        }).catch((err) => {
+            console.error(err);
+            document.getElementById('status').innerText = 'PDF yüklenemedi. Dosya adını kontrol edin.';
+        });
     </script>
 
 </body>
